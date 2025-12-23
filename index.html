@@ -1,39 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nota Folder v120.9.3 - Calc Fix</title>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-
-<div id="comp-notify">
-    <div id="notify-box" class="notify-box"><span id="notify-msg">Pesan</span></div>
-</div>
-
-<div id="comp-popup" class="popup-overlay hidden">
-    <div class="popup-box">
-        <div id="popup-icon" style="font-size: 40px; margin-bottom: 10px;">📁</div>
-        <h3 id="popup-title">Judul</h3>
-        
-        <div id="popup-content-calc" class="hidden" style="margin: 15px 0;">
-            <div id="popup-calc-list" class="calc-detail-box"></div>
-            <p style="font-size:12px; color:#64748b; margin-bottom:0px;">Total Terpilih:</p>
-            <div style="font-size:28px; font-weight:900; color:var(--success);">Rp <span id="popup-total-val">0</span></div>
-        </div>
-
-        <div id="popup-desc" class="hidden" style="font-size: 13px; color: gray; margin: 10px 0;"></div>
-        
-        <div id="popup-input-wrapper">
-            <input type="text" id="popup-input">
-            <div id="popup-opt-wrapper" class="hidden" style="margin-top: 10px; text-align: left; display: flex; align-items: center; gap: 8px;">
-                <input type="checkbox" id="popup-chk-open" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: var(--nota);" checked>
-                <label for="popup-chk-open" style="font-style: italic; font-size: 11px; color: #64748b; cursor: pointer;">Buka langsung setelah dibuat</label>
-            </div>
-            <div id="popup-disc-wrapper" class="hidden" style="margin-top:10px;">
-                <select id="disc-type" style="margin-bottom:10px;">
                     <option value="n">Rp (Nominal)</option>
                     <option value="p">% (Persen)</option>
                 </select>
