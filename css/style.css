@@ -72,10 +72,7 @@ button { cursor: pointer; border-radius: 10px; border: none; font-weight: 600; p
 #btn-pilih-toggle { background: var(--success); color: white; flex: 0.6; }
 
 @media screen and (max-width: 600px) {
-    /* FITUR BARU: Sembunyikan Tombol Desktop di HP */
     .switch-container { display: none !important; }
-
-    /* FITUR BARU: Tampilkan Tombol PDF & Download di HP */
     .btn-screenshot { display: inline-block !important; }
 
     body:not(.is-desktop):not(.mode-editor) .header-group { gap: 8px; }
@@ -122,22 +119,23 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
     box-sizing: border-box;
 }
 
+/* TOMBOL RENAME GLOBAL (CARD & LIST) */
 .btn-rename-u { 
     position: absolute; top: 6px; right: 6px; 
     color: #475569; background: #f1f5f9; 
-    font-size: 14px; width: 28px; height: 28px; border-radius: 50%; 
+    font-size: 14px; width: 32px; height: 32px; border-radius: 50%; 
     display: flex; align-items: center; justify-content: center;
     transition: 0.2s; cursor: pointer; z-index: 10; 
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 .btn-rename-u:hover { color: white; background: var(--nota); }
 
-/* TOMBOL MATA (Preview) */
+/* TOMBOL PREVIEW GLOBAL */
 .btn-quick-view {
     position: absolute; bottom: 6px; right: 6px;
     color: #475569;
     background: #f1f5f9;
-    font-size: 14px; width: 28px; height: 28px; border-radius: 50%;
+    font-size: 14px; width: 32px; height: 32px; border-radius: 50%; 
     display: flex; align-items: center; justify-content: center;
     transition: 0.2s; cursor: pointer; z-index: 10;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -147,12 +145,13 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
 /* FIX: LIST ITEM & RENAME BUTTON POSITIONING */
 .list-container { display: flex; flex-direction: column; gap: 8px; }
 .list-item { 
-    display: flex; align-items: flex-start; /* Align Top */
+    display: flex; align-items: flex-start; 
     background: white; border: 1px solid #e2e8f0; 
     padding: 12px; 
-    padding-right: 60px; /* Space for absolute buttons */
+    padding-right: 80px; /* Space for absolute buttons to prevent overlapping */
     border-radius: 8px; cursor: pointer; 
-    transition: 0.1s; position: relative; /* For absolute rename */
+    transition: 0.1s; 
+    position: relative; /* REQUIRED for absolute positioning inside */
 }
 .list-item:hover { background: #f8fafc; border-color: #cbd5e1; }
 .list-item.selected { border: 2px solid var(--danger); background: #fff1f2; }
@@ -160,21 +159,24 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
 .list-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
 /* FIX: LIST MODE RENAME BUTTON POSITION (TOP RIGHT) & Z-INDEX */
+/* Ini memaksa tombol rename di pojok kanan atas di mode list */
 .list-item .btn-rename-u {
-    position: absolute;
-    top: 10px;
-    right: 10px;
+    position: absolute !important;
+    top: 10px !important;
+    right: 10px !important;
     background: #f1f5f9;
-    z-index: 50; /* HIGH Z-INDEX TO ENSURE CLICKABLE ON PC */
+    z-index: 50; /* HIGH Z-INDEX */
     transform: none !important;
+    left: auto !important;
+    bottom: auto !important;
 }
 
 /* FIX: LIST MODE QUICK VIEW BUTTON (BOTTOM RIGHT) */
 .list-item .btn-quick-view {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    z-index: 50; /* HIGH Z-INDEX TO ENSURE CLICKABLE ON PC */
+    position: absolute !important;
+    bottom: 10px !important;
+    right: 10px !important;
+    z-index: 50; /* HIGH Z-INDEX */
     transform: none !important;
 }
 
@@ -195,7 +197,7 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
     overflow-x: auto; 
     margin-top: 15px; 
     border-radius: 8px;
-    max-height: 350px; /* Approx 5-6 rows before scroll */
+    max-height: 350px; 
     overflow-y: auto;
     border: 1px solid #e2e8f0;
 }
@@ -228,14 +230,15 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
 .btn-add-col-circle { background: var(--nota); color: white; width: 25px; height: 25px; border-radius: 50%; font-size: 18px; display: flex; align-items: center; justify-content: center; margin: auto; cursor: pointer; font-weight: bold; }
 
 .trash-trigger { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--danger); color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); border: 3px solid white; cursor: pointer; z-index: 8000; }
-.modal-full { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; }
 
-/* MODAL FIX */
+/* FIX: Z-INDEX SUPER TINGGI UNTUK MODAL & OVERLAY */
+.modal-full { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 99999; }
+
 .modal-inner { 
     background: white; width: 95%; max-width: 500px; border-radius: 24px; 
     padding: 20px; 
-    max-height: 85vh; /* FIX: Batasi tinggi maksimal */
-    overflow-y: auto; /* FIX: Aktifkan scroll jika konten panjang */
+    max-height: 85vh; 
+    overflow-y: auto; 
     display:flex; flex-direction:column; 
     box-shadow: 0 10px 40px rgba(0,0,0,0.2);
 }
@@ -263,7 +266,7 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
         font-size: 11px !important;
     }
     #preview-screen {
-        padding-top: 180px; /* Space agar tidak ketutup toolbar */
+        padding-top: 180px; 
     }
 }
 
@@ -279,7 +282,6 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
     max-width: 100%;             
 }
 
-/* FIX: PREVIEW TITLE WRAP */
 .preview-header h2 {
     margin: 0;
     text-transform: uppercase;
@@ -288,6 +290,21 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
     overflow-wrap: break-word;
     line-height: 1.2;
 }
+
+#preview-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #222; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-top: 120px; z-index: 20000; }
+
+/* FIX: Z-INDEX SUPER TINGGI UNTUK POPUP */
+.popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: flex-start; padding-top: 15vh; z-index: 99999; opacity: 1; transition: opacity 0.3s; }
+.popup-overlay.hidden { display: none !important; opacity: 0; pointer-events: none; }
+
+#comp-notify { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); pointer-events: none; transition: 0.3s; opacity: 0; z-index: 999999; }
+
+.popup-box { background: white; width: 85%; max-width: 380px; padding: 25px; border-radius: 24px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; }
+.popup-box input { 
+    width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px; margin-top: 15px; 
+    outline: none; box-sizing: border-box; font-size: 16px; 
+}
+.popup-box select { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px; margin-top: 10px; outline: none; box-sizing: border-box; font-size: 14px; background: #f8fafc; }
 
 #preview-paper { background: white; width: 450px; min-height: 800px; padding: 35px; color: black; box-sizing: border-box; border: 1px solid #ddd; position: relative; transition: 0.3s; transform-origin: top center; }
 #preview-paper table { width: 100%; border-collapse: collapse; border: 2px solid black; font-size: 13px; }
