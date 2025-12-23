@@ -36,7 +36,8 @@ function sysNum(val) {
 /* --- UI SYSTEM --- */
 function uiShowChangelog() {
     const logs = [
-        "<b>v120.9.5</b>: Fix Input Kapital & Ellipsis Nama.",
+        "<b>v120.9.7</b>: Fix Tombol Mobile & Switch Desktop.",
+        "<b>v120.9.6</b>: Fix Input Kapital & Limit Nama.",
         "<b>v120.9.4</b>: Fix 'Ghost' Folder di Menu Pindah.",
         "<b>v120.9.3</b>: FIX Total Angka (Ribuan Bug)."
     ];
@@ -191,10 +192,16 @@ function navRenderGrid() {
         const qvBtn = item.type === 'nota' ? `<div class="btn-quick-view" onclick="event.stopPropagation(); sysQuickPreview('${item.id}')">👁️</div>` : '';
         const isSel = selIds.includes(item.id);
         
+        // FIX: LIMIT CHARACTER LOGIC
+        let dispName = item.name;
+        const limit = viewMode === 'simple' ? 13 : 18;
+        if(dispName.length > limit) dispName = dispName.substring(0, limit) + '...';
+
         if (viewMode === 'simple') {
             const card = document.createElement('div'); card.className = `card ${isSel ? 'selected' : ''}`;
             card.style.borderTop = `5px solid ${item.type === 'folder' ? 'var(--folder)' : 'var(--nota)'}`;
-            card.innerHTML = `${qvBtn}<div class="btn-rename-u" onclick="event.stopPropagation(); uiPopupOpen('rename', '${item.id}')">✎</div><div class="card-icon">${item.type==='folder'?'📁':'📄'}</div><b>${item.name}</b><span class="time-label">${getTimeAgo(item.createdAt)}</span>`;
+            // Use dispName here
+            card.innerHTML = `${qvBtn}<div class="btn-rename-u" onclick="event.stopPropagation(); uiPopupOpen('rename', '${item.id}')">✎</div><div class="card-icon">${item.type==='folder'?'📁':'📄'}</div><b>${dispName}</b><span class="time-label">${getTimeAgo(item.createdAt)}</span>`;
             card.onclick = () => selMode ? sysToggleSelect(item.id) : (item.type==='folder' ? navGo(item.id) : editOpen(item.id));
             grid.appendChild(card);
         } else {
@@ -212,7 +219,8 @@ function navRenderGrid() {
                 if(item.items) item.items.forEach(r => total += (sysNum(r.jml) * sysNum(r.harga))); 
                 metaHtml = `<div class="meta-line">📦 ${itemCount} Barang</div><div class="meta-line" style="color:var(--nota);font-weight:bold;">💰 Rp ${total.toLocaleString('id-ID')}</div><div class="meta-line">✏️ Edit: ${dateEdit}</div>`; 
             }
-            row.innerHTML = `<div class="list-icon">${icon}</div><div class="list-body"><div class="list-title">${item.name}</div><div class="list-meta-row">${metaHtml}</div></div>${qvBtn}<div class="btn-rename-u" style="position:relative; right:auto; top:auto;" onclick="event.stopPropagation(); uiPopupOpen('rename', '${item.id}')">✎</div>`;
+            // Use dispName here
+            row.innerHTML = `<div class="list-icon">${icon}</div><div class="list-body"><div class="list-title">${dispName}</div><div class="list-meta-row">${metaHtml}</div></div>${qvBtn}<div class="btn-rename-u" style="position:relative; right:auto; top:auto;" onclick="event.stopPropagation(); uiPopupOpen('rename', '${item.id}')">✎</div>`;
             row.onclick = () => selMode ? sysToggleSelect(item.id) : (item.type==='folder' ? navGo(item.id) : editOpen(item.id));
             grid.appendChild(row);
         }
@@ -722,9 +730,7 @@ function uiPreview(show, useStorage = false) {
         if (useStorage) {
             if(n.items) {
                 n.items.forEach((item, idx) => {
-                    const q = sysNum(item.jml); 
-                    const p = sysNum(item.harga);
-                    total += (q * p);
+                    const q = parseFloat(item.jml) || 0; const p = parseFloat(item.harga) || 0; total += (q * p);
                     let rowEx = ''; if(item.extras) item.extras.forEach(e => rowEx += `<td style="padding:8px;text-align:center">${e}</td>`);
                     const rowNum = showNum ? `<td style="padding:8px;text-align:center;border-right:1px solid black;border-bottom:1px solid black;">${idx + 1}</td>` : '';
                     rows += `<tr>${rowNum}<td style="padding:8px">${item.barang.replace(/\n/g, "<br>")}</td><td style="padding:8px;text-align:center">${parseInt(item.jml).toLocaleString('id-ID').replace(/\n/g, "<br>")}</td><td style="padding:8px">${parseInt(item.harga).toLocaleString('id-ID').replace(/\n/g, "<br>")}</td>${rowEx}</tr>`;
