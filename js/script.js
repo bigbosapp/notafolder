@@ -36,9 +36,9 @@ function sysNum(val) {
 /* --- UI SYSTEM --- */
 function uiShowChangelog() {
     const logs = [
+        "<b>v120.9.5</b>: Fix Input Kapital & Ellipsis Nama.",
         "<b>v120.9.4</b>: Fix 'Ghost' Folder di Menu Pindah.",
-        "<b>v120.9.3</b>: FIX Total Angka (Ribuan Bug).",
-        "<b>v120.9.2</b>: Fix Bug Pindahkan Folder/File."
+        "<b>v120.9.3</b>: FIX Total Angka (Ribuan Bug)."
     ];
     uiPopupOpen('changelog', logs);
 }
