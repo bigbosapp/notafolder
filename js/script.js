@@ -36,6 +36,7 @@ function sysNum(val) {
 /* --- UI SYSTEM --- */
 function uiShowChangelog() {
     const logs = [
+        "<b>v120.9.8</b>: Fix Title Wrap (Judul Panjang).",
         "<b>v120.9.7</b>: Fix Tombol Mobile & Switch Desktop.",
         "<b>v120.9.6</b>: Fix Input Kapital & Limit Nama.",
         "<b>v120.9.4</b>: Fix 'Ghost' Folder di Menu Pindah.",
