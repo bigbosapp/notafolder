@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nota Folder v120.9.3 - Calc Fix</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="comp-notify">
+    <div id="notify-box" class="notify-box"><span id="notify-msg">Pesan</span></div>
+</div>
+
+<div id="comp-popup" class="popup-overlay hidden">
+    <div class="popup-box">
+        <div id="popup-icon" style="font-size: 40px; margin-bottom: 10px;">📁</div>
+        <h3 id="popup-title">Judul</h3>
+        
+        <div id="popup-content-calc" class="hidden" style="margin: 15px 0;">
+            <div id="popup-calc-list" class="calc-detail-box"></div>
+            <p style="font-size:12px; color:#64748b; margin-bottom:0px;">Total Terpilih:</p>
+            <div style="font-size:28px; font-weight:900; color:var(--success);">Rp <span id="popup-total-val">0</span></div>
+        </div>
+
+        <div id="popup-desc" class="hidden" style="font-size: 13px; color: gray; margin: 10px 0;"></div>
+        
+        <div id="popup-input-wrapper">
+            <input type="text" id="popup-input">
+            <div id="popup-opt-wrapper" class="hidden" style="margin-top: 10px; text-align: left; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="popup-chk-open" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: var(--nota);" checked>
+                <label for="popup-chk-open" style="font-style: italic; font-size: 11px; color: #64748b; cursor: pointer;">Buka langsung setelah dibuat</label>
+            </div>
+            <div id="popup-disc-wrapper" class="hidden" style="margin-top:10px;">
+                <select id="disc-type" style="margin-bottom:10px;">
+                    <option value="n">Rp (Nominal)</option>
+                    <option value="p">% (Persen)</option>
+                </select>
+                <input type="number" id="disc-val" placeholder="Nilai Diskon..." style="padding:12px; width:100%; box-sizing:border-box; border:2px solid #eee; border-radius:12px;">
+            </div>
+            <select id="popup-select" class="hidden"></select>
+        </div>
+        
+        <div style="display: flex; gap: 12px; margin-top: 25px;">
+            <button id="btn-popup-cancel" style="background:var(--danger); flex:1; color:white; font-weight:bold;" onclick="uiPopupClose()">Batal</button>
+            <button id="btn-popup-confirm" style="background:var(--nota); color:white; flex:2">Simpan</button>
+        </div>
+        
+        <button id="btn-popup-extra" class="hidden" style="margin-top: 10px; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; border: none; cursor: pointer; background: #f1f5f9; color: #64748b;">Batal</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="header-row">
+        <div class="version-tag" onclick="uiShowChangelog()">Nota Folder v120.9.3 (Calc Fix)</div>
+    </div>
+    
+    <div class="view-mode-bar">
+        <button id="vm-simple" class="view-btn active" onclick="sysChangeView('simple')">Sederhana</button>
+        <button id="vm-details" class="view-btn" onclick="sysChangeView('details')">Details</button>
+        <div style="flex:1"></div>
+        <button class="view-btn" onclick="sysAppResetConfirm()" style="margin-right:10px; color:var(--danger); font-weight:bold; font-size:16px; padding:2px 10px;">↻</button>
+        <div class="switch-container">
+             <label class="switch">
+                <input type="checkbox" id="layout-toggle" onchange="sysToggleLayout()">
+                <span class="slider round"></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="header-group">
+        <div class="nav-wrapper">
+            <div class="nav-left">
+                <button class="nav-arrow" onclick="navBack()">⬅</button>
+                <ul id="comp-breadcrumbs" class="breadcrumbs"></ul>
+            </div>
+            <div class="nav-right">
+                <input type="text" id="inp-search" placeholder="🔍 Cari..." oninput="sysSearch(this.value)" style="padding:6px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; width:100px; transition:0.3s;">
+                <button style="background:white; border:1px solid #ddd; padding:6px; font-size:10px; border-radius:8px;" onclick="sysExport()">💾 Export</button>
+                <button style="background:white; border:1px solid #ddd; padding:6px; font-size:10px; border-radius:8px;" onclick="document.getElementById('inp-import').click()">📂 Impor</button>
+                <input type="file" id="inp-import" class="hidden" accept=".json" onchange="sysImport(event)">
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <button class="btn-f" onclick="uiPopupOpen('folder')">+ Folder</button>
+            <button class="btn-n" onclick="uiPopupOpen('nota')">+ Nota</button>
+            <button id="btn-pilih-toggle" onclick="uiToggleSelection()">Pilih</button>
+        </div>
+    </div>
+
+    <div id="view-list">
+        <div id="select-bar" class="hidden">
+            <div class="select-actions">
+                <button class="btn-sel-act" style="background:var(--nota);" onclick="uiPopupOpen('move')">Pindahkan</button>
+                <button class="btn-sel-act" style="background:var(--success);" onclick="sysSumSelected()">Jumlahkan</button>
+                <button class="btn-sel-act" style="background:var(--danger);" onclick="sysConfirmDelete()">Hapus</button>
+            </div>
+            <div class="select-info">
+                <span id="txt-select-count" style="font-weight:bold; color:var(--danger); font-size:11px;">0 Item</span>
+                <input type="checkbox" id="cb-select-all" class="chk-all" onchange="sysToggleSelectAll(this.checked)">
+            </div>
+        </div>
+
+        <div id="comp-grid" class="grid"></div>
+    </div>
+
+    <div id="view-editor" class="hidden">
+        <h2 id="txt-nota-title" style="text-align:center; color:var(--nota); margin-bottom:5px;"></h2>
+        
+        <div style="margin-bottom: 5px; display: flex; align-items: center; gap: 5px;">
+            <input type="checkbox" id="chk-show-date" onchange="toggleDateSection()" style="accent-color: var(--nota); width: 16px; height: 16px; cursor: pointer;">
+            <label for="chk-show-date" style="font-size: 12px; color: var(--nota); font-weight: 600; cursor: pointer;">Atur Tanggal</label>
+        </div>
+
+        <div id="date-wrapper" class="hidden">
+            <div style="display:flex; gap:10px; margin-bottom: 10px;">
+                <button id="btn-mode-single" onclick="sysSetDateMode('single')" class="btn-date">Single Tgl</button>
+                <button id="btn-mode-double" onclick="sysSetDateMode('double')" class="btn-date">Double Tgl</button>
+            </div>
+            <div id="comp-date-row" style="display: grid; gap: 10px; margin-bottom: 15px;"></div>
+        </div>
+        
+        <div class="table-wrapper"><table class="editor-table"><thead id="comp-thead"></thead><tbody id="comp-tbody"></tbody></table></div>
+        
+        <div style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 15px;">
+            
+            <div style="flex: 1; min-width: 200px;">
+                 <div id="total-wrapper" style="text-align:center; margin-bottom: 15px; padding: 15px; border: 1px dashed #cbd5e1; border-radius: 12px;">
+                    <div style="font-size:12px; color:#64748b; font-weight:bold;">TOTAL BAYAR :</div>
+                    
+                    <div style="display:flex; justify-content:center; align-items:baseline; gap:5px;">
+                        <span id="txt-old-total" class="hidden" style="text-decoration:line-through; color:#94a3b8; font-size:10px; align-self: flex-start;"></span>
+                        <span style="font-size:2rem; font-weight:900; color:var(--nota);">Rp <span id="txt-total">0</span></span>
+                    </div>
+
+                    <button onclick="uiPopupOpen('discount')" style="background:transparent; color:var(--nota); border:1px solid var(--nota); padding:5px 15px; border-radius:15px; font-size:11px; margin-top:5px; cursor:pointer;">+ Tambah Diskon</button>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 5px;">
+                    <input type="checkbox" id="chk-show-note" onchange="toggleInput('note')" style="accent-color: var(--nota); width: 16px; height: 16px; cursor: pointer;">
+                    <label for="chk-show-note" style="font-size: 12px; color: var(--nota); font-weight: 600; cursor: pointer;">Tambah Keterangan</label>
+                </div>
+                <textarea id="inp-nota-note" class="compact-area hidden" style="margin-top:0;" oninput="editStatus(false)" placeholder="Keterangan (Opsional)..." rows="3"></textarea>
+
+                <div style="display: flex; align-items: center; gap: 5px; margin-top: 10px; margin-bottom: 5px;">
+                    <input type="checkbox" id="chk-show-resi" onchange="toggleInput('resi')" style="accent-color: var(--nota); width: 16px; height: 16px; cursor: pointer;">
+                    <label for="chk-show-resi" style="font-size: 12px; color: var(--nota); font-weight: 600; cursor: pointer;">Tambah No. Resi</label>
+                </div>
+                <input type="text" id="inp-resi" class="hidden" style="margin-top:0;" placeholder="No. Resi / Paket (Opsional)..." oninput="editStatus(false)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; box-sizing:border-box;">
+            </div>
+            
+        </div>
+        
+        <div style="margin-top: 25px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; gap: 10px;">
+                <button style="background:var(--nota); color:white; flex:1; padding:12px; border-radius:8px;" onclick="editAddRow()">+ TAMBAH BARIS</button>
+                <button style="background:var(--danger); color:white; flex:1; padding:12px; border-radius:8px;" onclick="editDeleteSelectedRows()">HAPUS TERPILIH</button>
+            </div>
+            <div style="display:flex; gap:10px">
+                <button id="btn-preview-trigger" style="background:#065f46; color:white; flex:1;" onclick="uiPreview(true)">PREVIEW</button>
+                <button style="background:var(--success); color:white; flex:1;" onclick="editSave()">SIMPAN NOTA</button>
+            </div>
+            <p id="txt-save-status" style="text-align:center; font-size:11px; color:var(--danger); font-weight:bold;">⚠ Belum disimpan!</p>
+        </div>
+    </div>
+</div>
+
+<div class="trash-trigger" onclick="uiTrashOpen()">🗑️</div>
+<div id="comp-trash-modal" class="modal-full hidden">
+    <div class="modal-inner">
+        <div style="display:flex; gap:4px; margin-bottom:15px;">
+            <button id="tab-f" class="tab-btn" onclick="uiTrashTab('folder')">Folder</button>
+            <button id="tab-n" class="tab-btn" onclick="uiTrashTab('nota')">Nota</button>
+            <button id="tab-h" class="tab-btn" onclick="uiTrashTab('history')">History</button>
+        </div>
+        <div id="history-filter-bar" class="his-filter-box hidden">
+            <button class="his-btn h-trash" onclick="renderHistoryList('trash')">SAMPAH</button>
+            <button class="his-btn h-move" onclick="renderHistoryList('move')">PINDAH</button>
+            <button class="his-btn h-edit" onclick="renderHistoryList('edit')">EDIT</button>
+            <button class="his-btn h-all active" onclick="renderHistoryList('all')">SEMUA</button>
+        </div>
+        <div id="trash-list-content" style="min-height:200px; overflow-y:auto; flex:1;"></div>
+        <button id="btn-trash-empty" style="background:var(--danger); color:white; width:100%; padding:12px; border-radius:10px; font-weight:bold; margin-top:15px;" onclick="sysConfirmTrashEmpty()">KOSONGKAN SAMPAH</button>
+        <button style="background:#eee; width:100%; padding:12px; border-radius:10px; margin-top:10px; font-weight:bold;" onclick="uiTrashClose()">TUTUP</button>
+    </div>
+</div>
+
+<div id="preview-screen" class="hidden">
+    <div id="preview-toolbar">
+        <select onchange="sysChangeTheme(this.value)" style="padding:8px; border-radius:8px; border:none; background:#eee; font-weight:bold; font-size:12px;">
+            <option value="standard">Tampilan: Standar</option>
+            <option value="modern">Tampilan: Modern 3D</option>
+            <option value="transparent">Tampilan: Transparan</option>
+        </select>
+        <button id="btn-foot-toggle" style="background:var(--folder); color:white; padding:8px 12px; font-size:12px;" onclick="sysToggleFootnote()">Catatan: OFF</button>
+        
+        <button class="btn-download" style="background:var(--success); color:white; padding:8px 12px; font-size:12px;" onclick="sysDownloadImg()">💾 IMAGE</button>
+        
+        <button style="background:#8b5cf6; color:white; padding:8px 12px; font-size:12px;" onclick="uiPopupOpen('html_export')">💾 HTML</button>
+        
+        <button class="btn-screenshot" style="background:var(--success); color:white; padding:8px 12px; font-size:12px;" onclick="sysEnterScreenshotMode()">📸 SCREENSHOT</button>
+        <button class="btn-print" style="background:#0ea5e9; color:white; padding:8px 12px; font-size:12px;" onclick="sysPrint()">🖨️ PDF</button>
+        
+        <button style="background:var(--danger); color:white; padding:8px 15px; font-size:14px; font-weight:bold;" onclick="uiPreview(false)">X</button>
+    </div>
+    <div id="preview-paper"><div id="preview-content"></div></div>
+</div>
+
+<script src="js/script.js"></script>
+</body>
+</html>
