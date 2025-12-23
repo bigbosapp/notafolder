@@ -110,6 +110,17 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
 .card-icon { font-size: 24px; margin-bottom: 5px; }
 .time-label { font-size: 9px; color: #94a3b8; margin-top: 5px; }
 
+/* FIX: TRUNCATE TEXT DI GRID (ELLIPSIS) */
+.card b {
+    display: block;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 4px;
+    box-sizing: border-box;
+}
+
 .btn-rename-u { 
     position: absolute; top: 6px; right: 6px; 
     color: #475569; background: #f1f5f9; 
@@ -143,7 +154,12 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
 .list-item.selected { border: 2px solid var(--danger); background: #fff1f2; }
 .list-icon { font-size: 24px; margin-right: 12px; min-width: 30px; text-align: center; margin-top: 2px; }
 .list-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding-right: 35px; /* Space for rename button */ }
-.list-title { font-weight: bold; font-size: 14px; color: var(--text); margin-bottom: 6px; }
+
+/* FIX: TRUNCATE TEXT DI LIST (ELLIPSIS) */
+.list-title { 
+    font-weight: bold; font-size: 14px; color: var(--text); margin-bottom: 6px; 
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 .list-meta-row { 
     display: flex; flex-direction: column; /* Vertical Stack */
@@ -207,8 +223,13 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
 .popup-overlay.hidden { opacity: 0; pointer-events: none; }
 #comp-notify { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); pointer-events: none; transition: 0.3s; opacity: 0; z-index: 40000; }
 
+/* FIX: INPUT POPUP CAPITALIZATION BUG REMOVED */
 .popup-box { background: white; width: 85%; max-width: 380px; padding: 25px; border-radius: 24px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; }
-.popup-box input { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px; margin-top: 15px; outline: none; box-sizing: border-box; font-size: 16px; text-transform: uppercase; }
+.popup-box input { 
+    width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px; margin-top: 15px; 
+    outline: none; box-sizing: border-box; font-size: 16px; 
+    /* removed text-transform: uppercase */
+}
 .popup-box select { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px; margin-top: 10px; outline: none; box-sizing: border-box; font-size: 14px; background: #f8fafc; }
 
 .calc-detail-box { max-height: 200px; overflow-y: auto; text-align: left; background: #f8fafc; border-radius: 12px; padding: 10px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
