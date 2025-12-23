@@ -72,8 +72,11 @@ button { cursor: pointer; border-radius: 10px; border: none; font-weight: 600; p
 #btn-pilih-toggle { background: var(--success); color: white; flex: 0.6; }
 
 @media screen and (max-width: 600px) {
-    .btn-print { display: none !important; }
-    .btn-download { display: none !important; }
+    /* FITUR BARU: Sembunyikan Tombol Desktop di HP */
+    .switch-container { display: none !important; }
+
+    /* FITUR BARU: Tampilkan Tombol PDF & Download di HP (Code lama dihapus) */
+    
     .btn-screenshot { display: inline-block !important; }
 
     body:not(.is-desktop):not(.mode-editor) .header-group { gap: 8px; }
@@ -110,7 +113,6 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
 .card-icon { font-size: 24px; margin-bottom: 5px; }
 .time-label { font-size: 9px; color: #94a3b8; margin-top: 5px; }
 
-/* FIX: TRUNCATE TEXT DI GRID (ELLIPSIS) */
 .card b {
     display: block;
     width: 100%;
@@ -155,7 +157,6 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
 .list-icon { font-size: 24px; margin-right: 12px; min-width: 30px; text-align: center; margin-top: 2px; }
 .list-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding-right: 35px; /* Space for rename button */ }
 
-/* FIX: TRUNCATE TEXT DI LIST (ELLIPSIS) */
 .list-title { 
     font-weight: bold; font-size: 14px; color: var(--text); margin-bottom: 6px; 
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -223,12 +224,10 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
 .popup-overlay.hidden { opacity: 0; pointer-events: none; }
 #comp-notify { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); pointer-events: none; transition: 0.3s; opacity: 0; z-index: 40000; }
 
-/* FIX: INPUT POPUP CAPITALIZATION BUG REMOVED */
 .popup-box { background: white; width: 85%; max-width: 380px; padding: 25px; border-radius: 24px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; }
 .popup-box input { 
     width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px; margin-top: 15px; 
     outline: none; box-sizing: border-box; font-size: 16px; 
-    /* removed text-transform: uppercase */
 }
 .popup-box select { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px; margin-top: 10px; outline: none; box-sizing: border-box; font-size: 14px; background: #f8fafc; }
 
