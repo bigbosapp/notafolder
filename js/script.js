@@ -27,10 +27,8 @@ function formatDateDetail(iso) { const d = new Date(iso); return d.toLocaleDateS
 
 function getTimeAgo(iso) { const diff = (new Date() - new Date(iso)) / 1000; if (diff < 60) return "Baru saja"; if (diff < 3600) return Math.floor(diff / 60) + " menit lalu"; if (diff < 86400) return Math.floor(diff / 3600) + " jam lalu"; return Math.floor(diff / 86400) + " hari lalu"; }
 
-// FIX: Helper untuk membersihkan angka dari format ribuan ("1.000" -> 1000)
 function sysNum(val) {
     if (!val) return 0;
-    // Ubah ke string, hapus titik, jadikan float
     const clean = val.toString().replace(/\./g, '');
     return parseFloat(clean) || 0;
 }
@@ -38,9 +36,9 @@ function sysNum(val) {
 /* --- UI SYSTEM --- */
 function uiShowChangelog() {
     const logs = [
+        "<b>v120.9.4</b>: Fix 'Ghost' Folder di Menu Pindah.",
         "<b>v120.9.3</b>: FIX Total Angka (Ribuan Bug).",
-        "<b>v120.9.2</b>: Fix Bug Pindahkan Folder/File.",
-        "<b>v120.9.1</b>: Cleaned Code (Duplicate Fix)."
+        "<b>v120.9.2</b>: Fix Bug Pindahkan Folder/File."
     ];
     uiPopupOpen('changelog', logs);
 }
@@ -101,7 +99,6 @@ function sysGetFolderTotal(parentId) {
     const children = storage.filter(i => i.parentId === parentId && !i.inTrash);
     children.forEach(child => {
         if (child.type === 'nota' && child.items) {
-            // FIX: Gunakan sysNum()
             child.items.forEach(item => { total += (sysNum(item.jml) * sysNum(item.harga)); });
         } else if (child.type === 'folder') {
             total += sysGetFolderTotal(child.id);
@@ -118,7 +115,6 @@ function sysSumSelected() {
         if(item) {
             let itemVal = 0;
             if(item.type === 'nota' && item.items) { 
-                // FIX: Gunakan sysNum()
                 item.items.forEach(r => itemVal += (sysNum(r.jml) * sysNum(r.harga))); 
                 files.push({ name: item.name, val: itemVal }); 
             } 
@@ -213,7 +209,6 @@ function navRenderGrid() {
                 metaHtml = `<div class="meta-line">📂 Isi: ${count} File</div><div class="meta-line" style="color:#16a34a;font-weight:bold;">💰 Rp ${folderTotal.toLocaleString('id-ID')}</div><div class="meta-line">✏️ Edit: ${dateEdit}</div>`; 
             } else { 
                 let itemCount = item.items ? item.items.length : 0; let total = 0; 
-                // FIX: Gunakan sysNum()
                 if(item.items) item.items.forEach(r => total += (sysNum(r.jml) * sysNum(r.harga))); 
                 metaHtml = `<div class="meta-line">📦 ${itemCount} Barang</div><div class="meta-line" style="color:var(--nota);font-weight:bold;">💰 Rp ${total.toLocaleString('id-ID')}</div><div class="meta-line">✏️ Edit: ${dateEdit}</div>`; 
             }
@@ -444,10 +439,31 @@ function uiPopupOpen(type, extra = null) {
         icon.innerText = '🚚'; title.innerText = "Pindahkan Item"; 
         desc.innerText = "Pilih Folder Tujuan:"; desc.classList.remove('hidden'); wrap.classList.remove('hidden'); input.classList.add('hidden'); sel.classList.remove('hidden'); 
         
+        // FIX: Ancestor Check Logic (Ghost Folder Fix)
         const validDestinations = storage.filter(f => {
-            if (f.type !== 'folder') return false; if (f.inTrash) return false; if (f.id === curParent) return false; if (selIds.includes(f.id)) return false; 
-            let parentPointer = f.parentId; let safety = 0;
-            while(parentPointer) { if(selIds.includes(parentPointer)) return false; const parentObj = storage.find(x => x.id === parentPointer); if(!parentObj) break; parentPointer = parentObj.parentId; safety++; if(safety > 1000) break; }
+            if (f.type !== 'folder') return false; 
+            if (f.inTrash) return false; 
+            if (f.id === curParent) return false; 
+            
+            // Prevent recursive move (parent into child)
+            let tempParent = f.parentId;
+            while(tempParent) {
+                if(selIds.includes(tempParent)) return false; 
+                const p = storage.find(x => x.id === tempParent);
+                if(!p) break;
+                tempParent = p.parentId;
+            }
+            if (selIds.includes(f.id)) return false; 
+
+            // FIX: Check if ancestors are in trash
+            let pointer = f.parentId;
+            while(pointer) {
+                const parentObj = storage.find(x => x.id === pointer);
+                if(!parentObj) break; 
+                if(parentObj.inTrash) return false; // Ancestor in trash!
+                pointer = parentObj.parentId;
+            }
+
             return true;
         });
 
@@ -706,7 +722,6 @@ function uiPreview(show, useStorage = false) {
         if (useStorage) {
             if(n.items) {
                 n.items.forEach((item, idx) => {
-                    // FIX: Gunakan sysNum()
                     const q = sysNum(item.jml); 
                     const p = sysNum(item.harga);
                     total += (q * p);
