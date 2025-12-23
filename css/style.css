@@ -75,8 +75,7 @@ button { cursor: pointer; border-radius: 10px; border: none; font-weight: 600; p
     /* FITUR BARU: Sembunyikan Tombol Desktop di HP */
     .switch-container { display: none !important; }
 
-    /* FITUR BARU: Tampilkan Tombol PDF & Download di HP (Code lama dihapus) */
-    
+    /* FITUR BARU: Tampilkan Tombol PDF & Download di HP */
     .btn-screenshot { display: inline-block !important; }
 
     body:not(.is-desktop):not(.mode-editor) .header-group { gap: 8px; }
@@ -267,9 +266,26 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
 .notify-box { background: white; padding: 12px 25px; border-radius: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 2px solid #eee; font-weight: bold; }
 #comp-notify.show { top: 40px; opacity: 1; }
 
-#preview-toolbar {
-    position: fixed; top: 0; background: #323639; width: 100%; padding: 10px; 
-    display: flex; justify-content: center; gap: 8px; z-index: 20001; flex-wrap: wrap;
+/* FIX: TITLE WRAP & SPACING */
+#txt-nota-title {
+    text-align: center;
+    color: var(--nota);
+    margin-bottom: 5px;
+    word-wrap: break-word;       
+    overflow-wrap: break-word;   
+    white-space: normal;         
+    line-height: 1.2;            
+    max-width: 100%;             
+}
+
+/* FIX: PREVIEW TITLE WRAP */
+.preview-header h2 {
+    margin: 0;
+    text-transform: uppercase;
+    white-space: normal;         
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.2;
 }
 
 #preview-paper { background: white; width: 450px; min-height: 800px; padding: 35px; color: black; box-sizing: border-box; border: 1px solid #ddd; position: relative; transition: 0.3s; transform-origin: top center; }
