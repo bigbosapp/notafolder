@@ -119,7 +119,6 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
     box-sizing: border-box;
 }
 
-/* TOMBOL RENAME GLOBAL (CARD & LIST) */
 .btn-rename-u { 
     position: absolute; top: 6px; right: 6px; 
     color: #475569; background: #f1f5f9; 
@@ -130,7 +129,7 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
 }
 .btn-rename-u:hover { color: white; background: var(--nota); }
 
-/* TOMBOL PREVIEW GLOBAL */
+/* TOMBOL MATA (Preview) */
 .btn-quick-view {
     position: absolute; bottom: 6px; right: 6px;
     color: #475569;
@@ -148,10 +147,10 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
     display: flex; align-items: flex-start; 
     background: white; border: 1px solid #e2e8f0; 
     padding: 12px; 
-    padding-right: 80px; /* Space for absolute buttons to prevent overlapping */
+    padding-right: 80px; 
     border-radius: 8px; cursor: pointer; 
     transition: 0.1s; 
-    position: relative; /* REQUIRED for absolute positioning inside */
+    position: relative; 
 }
 .list-item:hover { background: #f8fafc; border-color: #cbd5e1; }
 .list-item.selected { border: 2px solid var(--danger); background: #fff1f2; }
@@ -159,13 +158,12 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
 .list-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
 /* FIX: LIST MODE RENAME BUTTON POSITION (TOP RIGHT) & Z-INDEX */
-/* Ini memaksa tombol rename di pojok kanan atas di mode list */
 .list-item .btn-rename-u {
     position: absolute !important;
     top: 10px !important;
     right: 10px !important;
     background: #f1f5f9;
-    z-index: 50; /* HIGH Z-INDEX */
+    z-index: 50; 
     transform: none !important;
     left: auto !important;
     bottom: auto !important;
@@ -176,7 +174,7 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
     position: absolute !important;
     bottom: 10px !important;
     right: 10px !important;
-    z-index: 50; /* HIGH Z-INDEX */
+    z-index: 50; 
     transform: none !important;
 }
 
@@ -293,8 +291,17 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
 
 #preview-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #222; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-top: 120px; z-index: 20000; }
 
-/* FIX: Z-INDEX SUPER TINGGI UNTUK POPUP */
-.popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: flex-start; padding-top: 15vh; z-index: 99999; opacity: 1; transition: opacity 0.3s; }
+/* FIX: POPUP OVERLAY CENTER (STABLE VERSION) */
+.popup-overlay { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.6); 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; /* CENTER VERTICAL & HORIZONTAL */
+    z-index: 99999; /* HIGH Z-INDEX */
+    opacity: 1; 
+    transition: opacity 0.3s; 
+}
 .popup-overlay.hidden { display: none !important; opacity: 0; pointer-events: none; }
 
 #comp-notify { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); pointer-events: none; transition: 0.3s; opacity: 0; z-index: 999999; }
