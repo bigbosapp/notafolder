@@ -36,7 +36,7 @@ function sysNum(val) {
 /* --- UI SYSTEM --- */
 function uiShowChangelog() {
     const logs = [
-        "<b>v120.9.9</b>: Fix Rename Button (Details) & Preview Layout.",
+        "<b>v120.9.10</b>: Fix Rename Button (Details) & Preview Layout.",
         "<b>v120.9.8</b>: Fix Title Wrap (Judul Panjang).",
         "<b>v120.9.7</b>: Fix Tombol Mobile & Switch Desktop.",
         "<b>v120.9.6</b>: Fix Input Kapital & Limit Nama.",
@@ -219,7 +219,6 @@ function navRenderGrid() {
                 metaHtml = `<div class="meta-line">📦 ${itemCount} Barang</div><div class="meta-line" style="color:var(--nota);font-weight:bold;">💰 Rp ${total.toLocaleString('id-ID')}</div><div class="meta-line">✏️ Edit: ${dateEdit}</div>`; 
             }
             
-            // FIX: Removed inline styles from rename button, now handled by CSS
             row.innerHTML = `<div class="list-icon">${icon}</div><div class="list-body"><div class="list-title">${dispName}</div><div class="list-meta-row">${metaHtml}</div></div>${qvBtn}<div class="btn-rename-u" onclick="event.stopPropagation(); uiPopupOpen('rename', '${item.id}')">✎</div>`;
             
             row.onclick = () => selMode ? sysToggleSelect(item.id) : (item.type==='folder' ? navGo(item.id) : editOpen(item.id));
@@ -253,7 +252,6 @@ function sysSearch(k) {
             const icon = item.type === 'folder' ? '📁' : '📄'; 
             let metaHtml = `<div class="time-label">Lokasi: ${l}</div>`;
             
-            // FIX: Removed inline styles from rename button
             row.innerHTML = `<div class="list-icon">${icon}</div><div class="list-body"><div class="list-title">${item.name}</div><div class="list-meta-row">${metaHtml}</div></div>${qvBtn}<div class="btn-rename-u" onclick="event.stopPropagation(); uiPopupOpen('rename', '${item.id}')">✎</div>`;
             
             row.onclick = () => item.type === 'folder' ? navGo(item.id) : editOpen(item.id);
@@ -714,7 +712,7 @@ function sysImport(e) {
 function getFinalHTML() {
     const paper = document.getElementById('preview-print-area'); if(!paper) return null;
     const n = storage.find(i=>i.id===activeId); const title = n ? n.name : 'Nota';
-    const styles = `body { font-family: sans-serif; padding: 20px; } table { width: 100%; border-collapse: collapse; border: 2px solid black; font-size: 13px; } th, td { padding: 8px; border-right: 1px solid black; border-bottom: 1px solid black; } th:last-child, td:last-child { border-right: none; } thead th { border-bottom: 2px solid black; background: #eee; } .theme-modern .preview-header { background: #f1f5f9; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 20px; } .theme-modern h2 { margin: 0; color: #1e293b; } .theme-modern table { border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-radius: 12px; overflow: hidden; } .theme-modern th, .theme-modern td { border: none; border-bottom: 1px solid #f1f5f9 !important; border-right: 1px solid #e2e8f0 !important; padding: 12px !important; color: #475569; } .theme-modern th:last-child, .theme-modern td:last-child { border-right: none !important; } .theme-modern th { background: #f1f5f9; color: #334155; font-weight: 800; text-transform: uppercase; } .theme-modern .preview-total { color: #2563eb !important; text-shadow: none !important; } .theme-transparent { background: transparent; } .theme-transparent .preview-header { border-bottom: 4px solid black !important; padding-bottom: 10px; margin-bottom: 20px !important; text-align: center; } .theme-transparent table { border: none !important; } .theme-transparent th { border: none !important; border-bottom: 2px solid black !important; border-right: 1px dotted black !important; background: transparent !important; color: black !important; font-weight: 900; } .theme-transparent td { border: none !important; border-bottom: 1px dotted #999 !important; border-right: 1px dotted black !important; color: black !important; } .theme-transparent th:last-child, .theme-transparent td:last-child { border-right: none !important; } .theme-transparent .preview-total { text-decoration: underline; } .text-right { text-align: right; } .hidden { display: none; }`;
+    const styles = `body { font-family: sans-serif; padding: 20px; } table { width: 100%; border-collapse: collapse; border: 2px solid black; font-size: 13px; } th, td { padding: 8px; border-right: 1px solid black; border-bottom: 1px solid black; } th:last-child, td:last-child { border-right: none; } thead th { border-bottom: 2px solid black; background: #eee; } .theme-modern .preview-header { background: #f1f5f9; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 20px; } .theme-modern h2 { margin: 0; color: #1e293b; } .theme-modern table { border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-radius: 12px; overflow: hidden; } .theme-modern th, .theme-modern td { border: none; border-bottom: 1px solid #f1f5f9; } .theme-modern th { background: #f1f5f9; color: #334155; font-weight: 800; } .theme-transparent { background: transparent; } .text-right { text-align: right; } .hidden { display: none; }`;
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>${styles}</style></head><body><div class="${document.getElementById('preview-print-area').className}">${paper.innerHTML}</div></body></html>`;
 }
 function sysDownloadHTMLAction() { const h = getFinalHTML(); if(!h) return; const n = storage.find(i=>i.id===activeId); const b = new Blob([h], {type: 'text/html'}); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `${n?n.name:'Nota'}.html`; a.click(); }
