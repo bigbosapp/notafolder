@@ -46,11 +46,14 @@ body.mode-editor .nav-wrapper { display: flex !important; background: transparen
 input:checked + .slider { background-color: var(--nota); }
 input:checked + .slider:before { transform: translateX(16px); }
 
-/* --- BUTTON SORT KECIL --- */
+/* --- BUTTON SORT KECIL (FIXED HEIGHT) --- */
 .btn-sort-icon {
     width: 45px; background: #f8fafc; color: #475569; border: 1px solid #cbd5e1;
     font-size: 18px; display: flex; align-items: center; justify-content: center;
     border-radius: 10px; cursor: pointer; flex: 0 0 auto;
+    /* Agar tingginya sama dengan tombol lain */
+    align-self: stretch; 
+    padding: 0; /* Reset padding internal */
 }
 .btn-sort-icon:hover { background: #e2e8f0; color: var(--nota); }
 
@@ -64,7 +67,6 @@ input:checked + .slider:before { transform: translateX(16px); }
     cursor: pointer; transition: 0.2s;
 }
 .sort-btn:hover { background: #f1f5f9; color: var(--text); }
-/* FIX: Active state forced with !important to override hover on desktop */
 .sort-btn.active {
     background: var(--nota) !important; color: white !important;
     border-color: var(--nota) !important; font-weight: bold;
@@ -95,6 +97,7 @@ button { cursor: pointer; border-radius: 10px; border: none; font-weight: 600; p
 .btn-n { background: var(--nota); color: white; flex: 1; }
 #btn-pilih-toggle { background: var(--success); color: white; flex: 0.6; }
 
+/* --- PERBAIKAN TAMPILAN MOBILE --- */
 @media screen and (max-width: 600px) {
     body.mode-editor { padding-bottom: 350px !important; }
     .switch-container { display: none !important; }
@@ -102,8 +105,17 @@ button { cursor: pointer; border-radius: 10px; border: none; font-weight: 600; p
 
     body:not(.is-desktop):not(.mode-editor) .header-group { gap: 8px; }
     body:not(.is-desktop):not(.mode-editor) .nav-wrapper { display: contents; } 
-    body:not(.is-desktop):not(.mode-editor) .nav-right { order: 1; width: 100%; display: flex; gap: 5px; margin-bottom: 5px; }
-    body:not(.is-desktop):not(.mode-editor) .action-bar { order: 2; margin-bottom: 5px; }
+    
+    /* FIX: Search Bar width 100% dan order paling atas */
+    body:not(.is-desktop):not(.mode-editor) .nav-right { 
+        order: 1; width: 100%; display: flex; gap: 5px; margin-bottom: 5px; 
+    }
+    
+    /* FIX: Tombol Action Bar width 100% agar memenuhi layar */
+    body:not(.is-desktop):not(.mode-editor) .action-bar { 
+        order: 2; margin-bottom: 5px; width: 100%; display: flex; justify-content: space-between;
+    }
+    
     body:not(.is-desktop) .nav-left { order: 3; width: 100%; background: #f1f5f9; padding: 8px 12px; border-radius: 10px; border-top: 2px solid white; min-height: 52px; box-sizing: border-box; display: flex; align-items: center; }
     body:not(.is-desktop) .breadcrumbs { font-size: 12px; }
     body:not(.is-desktop) #inp-search { flex: 1; min-width: 150px; }
