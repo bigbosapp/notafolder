@@ -572,7 +572,51 @@ function sysRestore(id) {
 
 function uiTrashOpen() { document.getElementById('comp-trash-modal').classList.remove('hidden'); uiTrashTab('folder'); }
 function uiTrashClose() { document.getElementById('comp-trash-modal').classList.add('hidden'); }
-function uiTrashTab(t) { curTrashTab = t; const tabs = { folder: 'tab-f', nota: 'tab-n', history: 'tab-h' }; Object.keys(tabs).forEach(k => { document.getElementById(tabs[k]).className = 'tab-btn' + (k === t ? ' active-' + (t==='history'?'h':t[0]) : ''); }); const list = document.getElementById('trash-list-content'); list.innerHTML = ''; const btnEmpty = document.getElementById('btn-trash-empty'); const filterBar = document.getElementById('history-filter-bar'); if(t === 'history') { btnEmpty.classList.add('hidden'); filterBar.classList.remove('hidden'); renderHistoryList('all'); } else { btnEmpty.classList.remove('hidden'); filterBar.classList.add('hidden'); const now = new Date(); storage.filter(i => i.inTrash && i.type === t).forEach(i => { const exp = new Date(new Date(i.deletedAt).getTime() + 2*24*60*60*1000) - now; const d = Math.floor(exp/86400000), h = Math.floor((exp%86400000)/3600000), m = Math.floor((exp%3600000)/60000); list.innerHTML += `<div style="padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;"><div style="text-align:left"><b>${i.name}</b><br><span class="trash-countdown">🕒 ${d}H ${h}J ${m}M</span></div><button onclick="sysRestore('${i.id}')" style="background:var(--nota);color:white;padding:5px 10px;border-radius:5px;font-size:10px">Restore</button></div>`; }); } }
+function uiTrashTab(t) { 
+    curTrashTab = t; 
+    const tabs = { folder: 'tab-f', nota: 'tab-n', history: 'tab-h' }; 
+    Object.keys(tabs).forEach(k => { 
+        document.getElementById(tabs[k]).className = 'tab-btn' + (k === t ? ' active-' + (t==='history'?'h':t[0]) : ''); 
+    }); 
+    
+    const list = document.getElementById('trash-list-content'); 
+    list.innerHTML = ''; 
+    const btnEmpty = document.getElementById('btn-trash-empty'); 
+    const filterBar = document.getElementById('history-filter-bar'); 
+    
+    if(t === 'history') { 
+        btnEmpty.classList.add('hidden'); 
+        filterBar.classList.remove('hidden'); 
+        renderHistoryList('all'); 
+    } else { 
+        btnEmpty.classList.remove('hidden'); 
+        filterBar.classList.add('hidden'); 
+        const now = new Date(); 
+        
+        // --- BAGIAN INI YANG DIUBAH ---
+        storage.filter(i => i.inTrash && i.type === t)
+               .sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt)) // <--- FIX: URUTKAN DARI YG BARU DIHAPUS
+               .forEach(i => { 
+                   // Hitung sisa waktu
+                   const delTime = new Date(i.deletedAt).getTime();
+                   const exp = (delTime + (2 * 24 * 60 * 60 * 1000)) - now; // 2 Hari (Sesuai request v121.11)
+                   
+                   const d = Math.floor(exp/86400000);
+                   const h = Math.floor((exp%86400000)/3600000);
+                   const m = Math.floor((exp%3600000)/60000); 
+                   
+                   // Tampilan Item Sampah
+                   list.innerHTML += `
+                   <div style="padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
+                       <div style="text-align:left">
+                           <b>${i.name}</b><br>
+                           <span class="trash-countdown">🕒 ${d}H ${h}J ${m}M</span>
+                       </div>
+                       <button onclick="sysRestore('${i.id}')" style="background:var(--nota);color:white;padding:5px 10px;border-radius:5px;font-size:10px;border:none;cursor:pointer;">Restore</button>
+                   </div>`; 
+               }); 
+    } 
+}
 function sysConfirmTrashEmpty() { uiConfirmAction("Hapus Permanen?", "Tab ini akan dikosongkan selamanya!", () => { storage = storage.filter(i => !(i.inTrash && i.type === curTrashTab)); dbSave(); uiTrashTab(curTrashTab); }, true); }
 
 function uiToggleSelection() { selMode = !selMode; selIds = []; document.getElementById('select-bar').classList.toggle('hidden', !selMode); const btn = document.getElementById('btn-pilih-toggle'); btn.innerText = selMode ? "Batal" : "Pilih"; btn.style.background = selMode ? "var(--danger)" : "var(--success)"; document.getElementById('txt-select-count').innerText = "0 Item"; navRenderGrid(); }
