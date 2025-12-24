@@ -14,8 +14,8 @@ body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--
 
 /* DESKTOP MODE */
 body.is-desktop .container { max-width: 98%; padding: 15px; }
-body.is-desktop .list-container { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important; gap: 10px; }
-body.is-desktop .grid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important; gap: 10px; }
+body.is-desktop .list-container { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important; row-gap: 60px; column-gap: 15px; }
+body.is-desktop .grid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important; gap: 20px; }
 body.is-desktop .card { min-height: 90px; padding: 8px; font-size: 11px; }
 body.is-desktop .card-icon { font-size: 20px; margin-bottom: 2px; }
 body.is-desktop .list-item { height: 100%; }
@@ -103,7 +103,7 @@ input[type="checkbox"].chk-all { appearance: none; width: 24px; height: 24px; bo
 input[type="checkbox"].chk-all:checked { background: var(--danger); }
 input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolute; color: white; font-size: 16px; top: 50%; left: 50%; transform: translate(-50%, -55%); }
 
-.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 .card { padding: 15px 10px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; cursor: pointer; background: white; min-height: 115px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; border-top: 5px solid #ccc; transition: 0.15s; }
 .card.selected { border: 3px solid var(--danger) !important; background: #fff1f2 !important; transform: scale(0.96); }
 .card-icon { font-size: 24px; margin-bottom: 5px; }
@@ -122,73 +122,109 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
 .btn-rename-u { 
     position: absolute; top: 6px; right: 6px; 
     color: #475569; background: #f1f5f9; 
-    font-size: 14px; width: 32px; height: 32px; border-radius: 50%; 
+    font-size: 14px; width: 28px; height: 28px; border-radius: 50%; 
     display: flex; align-items: center; justify-content: center;
     transition: 0.2s; cursor: pointer; z-index: 10; 
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
-.btn-rename-u:hover { color: white; background: var(--nota); }
 
-/* TOMBOL MATA (Preview) */
+/* FIX: WARNA TOMBOL ACTIVE */
+.btn-rename-u:active, .btn-rename-u:focus, .btn-rename-u:hover {
+    background: var(--nota) !important;
+    color: white !important;
+    transition: none !important;
+    transform: scale(1.1);
+}
+
 .btn-quick-view {
     position: absolute; bottom: 6px; right: 6px;
     color: #475569;
     background: #f1f5f9;
-    font-size: 14px; width: 32px; height: 32px; border-radius: 50%; 
+    font-size: 14px; width: 28px; height: 28px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     transition: 0.2s; cursor: pointer; z-index: 10;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 .btn-quick-view:hover { color: white; background: #334155; transform: scale(1.1); }
 
-/* FIX: LIST ITEM & RENAME BUTTON POSITIONING */
-.list-container { display: flex; flex-direction: column; gap: 8px; }
+/* --- GRID 2 KOLOM UNTUK LIST DETAILS --- */
+.list-container { 
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    row-gap: 60px; /* FIX: Perbesar Gap agar tidak menempel */
+    column-gap: 10px; /* FIX: Perbesar Gap agar tidak menempel */
+}
+
+/* FIX LIST ITEM UNTUK TAMPILAN GRID MOBILE & ZOOM OVERLAP FIX */
 .list-item { 
-    display: flex; align-items: flex-start; 
-    background: white; border: 1px solid #e2e8f0; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    text-align: center; 
+    background: white; 
+    border: 1px solid #e2e8f0; 
     padding: 12px; 
-    padding-right: 80px; 
-    border-radius: 8px; cursor: pointer; 
+    padding-top: 35px; /* Ruang atas */
+    border-radius: 8px; 
+    cursor: pointer; 
     transition: 0.1s; 
     position: relative; 
+    height: 100%; 
+    justify-content: space-between; 
 }
+
 .list-item:hover { background: #f8fafc; border-color: #cbd5e1; }
 .list-item.selected { border: 2px solid var(--danger); background: #fff1f2; }
-.list-icon { font-size: 24px; margin-right: 12px; min-width: 30px; text-align: center; margin-top: 2px; }
-.list-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.list-icon { font-size: 24px; margin-bottom: 8px; min-width: 30px; margin-right: 0; }
 
-/* FIX: LIST MODE RENAME BUTTON POSITION (TOP RIGHT) & Z-INDEX */
-.list-item .btn-rename-u {
-    position: absolute !important;
-    top: 10px !important;
-    right: 10px !important;
-    background: #f1f5f9;
-    z-index: 50; 
-    transform: none !important;
-    left: auto !important;
-    bottom: auto !important;
+.list-body { 
+    width: 100%; 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
+    margin-bottom: 25px; 
+    flex: 1; 
 }
 
-/* FIX: LIST MODE QUICK VIEW BUTTON (BOTTOM RIGHT) */
+/* FIX POSISI RENAME BUTTON DI LIST MODE */
+.list-item .btn-rename-u {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    transform: none; 
+    background: #f1f5f9;
+    z-index: 20; 
+}
+
+/* FIX KHUSUS: Override agar tetap biru saat di klik di dalam list item */
+.list-item .btn-rename-u:active {
+    background: var(--nota) !important;
+    color: white !important;
+}
+
+/* FIX POSISI QUICK VIEW DI LIST MODE */
 .list-item .btn-quick-view {
-    position: absolute !important;
-    bottom: 10px !important;
-    right: 10px !important;
-    z-index: 50; 
-    transform: none !important;
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    z-index: 20;
 }
 
 .list-title { 
-    font-weight: bold; font-size: 14px; color: var(--text); margin-bottom: 6px; 
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-weight: bold; font-size: 13px; color: var(--text); margin-bottom: 6px; 
+    white-space: normal; 
+    word-break: break-word; 
+    line-height: 1.3;
+    width: 100%;
 }
 
 .list-meta-row { 
-    display: flex; flex-direction: column; /* Vertical Stack */
-    gap: 2px; font-size: 11px; color: #64748b; 
-    text-align: left;
+    display: flex; flex-direction: column; 
+    gap: 2px; font-size: 10px; color: #64748b; 
+    text-align: center;
+    width: 100%;
 }
-.meta-line { display: flex; align-items: center; gap: 6px; }
+.meta-line { display: flex; align-items: center; justify-content: center; gap: 4px; }
 
 .table-wrapper { 
     width: 100%; 
@@ -201,7 +237,6 @@ input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolu
 }
 
 table.editor-table { width: 100%; border-collapse: collapse; min-width: 450px; }
-/* STICKY HEADER */
 table.editor-table thead th { 
     position: sticky; top: 0; z-index: 10;
     background: #f8fafc; padding: 10px; text-align: left; 
@@ -228,9 +263,7 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
 .btn-add-col-circle { background: var(--nota); color: white; width: 25px; height: 25px; border-radius: 50%; font-size: 18px; display: flex; align-items: center; justify-content: center; margin: auto; cursor: pointer; font-weight: bold; }
 
 .trash-trigger { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--danger); color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); border: 3px solid white; cursor: pointer; z-index: 8000; }
-
-/* FIX: Z-INDEX SUPER TINGGI UNTUK MODAL & OVERLAY */
-.modal-full { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 99999; }
+.modal-full { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; }
 
 .modal-inner { 
     background: white; width: 95%; max-width: 500px; border-radius: 24px; 
@@ -241,34 +274,59 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
     box-shadow: 0 10px 40px rgba(0,0,0,0.2);
 }
 
-/* FIX: PREVIEW TOOLBAR MOBILE LAYOUT (GRID PRESISI) */
-#preview-toolbar {
-    position: fixed; top: 0; background: #323639; width: 100%; padding: 10px; 
-    display: flex; justify-content: center; gap: 8px; z-index: 20001; flex-wrap: wrap;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+/* FIX: BACKGROUND TRANSPARAN 50% */
+#preview-screen { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0, 0, 0, 0.5); /* 50% Transparency */
+    overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-top: 120px; z-index: 20000; 
 }
 
-@media screen and (max-width: 600px) {
-    #preview-toolbar {
-        display: grid;
-        grid-template-columns: 1fr 1fr; /* 2 Kolom Presisi */
-        gap: 8px;
-        padding: 10px;
-    }
-    #preview-toolbar select {
-        grid-column: span 2; /* Select ambil lebar penuh */
-    }
-    #preview-toolbar button {
-        width: 100%;
-        margin: 0;
-        font-size: 11px !important;
-    }
-    #preview-screen {
-        padding-top: 180px; 
-    }
-}
+.popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: flex-start; padding-top: 15vh; z-index: 30000; opacity: 1; transition: opacity 0.3s; }
+.popup-overlay.hidden { opacity: 0; pointer-events: none; }
+#comp-notify { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); pointer-events: none; transition: 0.3s; opacity: 0; z-index: 40000; }
 
-/* FIX: TITLE WRAP & SPACING */
+.popup-box { background: white; width: 85%; max-width: 380px; padding: 25px; border-radius: 24px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; }
+.popup-box input { 
+    width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px; margin-top: 15px; 
+    outline: none; box-sizing: border-box; font-size: 16px; 
+}
+.popup-box select { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px; margin-top: 10px; outline: none; box-sizing: border-box; font-size: 14px; background: #f8fafc; }
+
+.calc-detail-box { max-height: 200px; overflow-y: auto; text-align: left; background: #f8fafc; border-radius: 12px; padding: 10px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
+.calc-row { display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding: 8px 0; font-size: 12px; align-items: center; }
+.calc-row:last-child { border-bottom: none; }
+.calc-row.is-folder { color: var(--folder); font-weight: bold; }
+.calc-row.is-nota { color: var(--text); }
+.calc-icon-sm { margin-right: 6px; font-size: 14px; }
+
+.delete-list-box { display: block !important; max-height: 180px; overflow-y: auto; text-align: left; background: #fff1f2; border: 2px solid #fecaca; padding: 10px; border-radius: 8px; margin: 15px 0; font-size: 13px; color: #1e293b; width: 100%; box-sizing: border-box; }
+.del-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed #fecaca; }
+.del-item:last-child { border-bottom: none; }
+.del-item b { color: var(--danger); font-weight: 700; }
+
+.tab-btn { flex: 1; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 13px; border: none; background: #f1f5f9; color: #94a3b8; transition: 0.2s; box-shadow: none; }
+.tab-btn.active-f { background: var(--folder); color: white; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4); }
+.tab-btn.active-n { background: var(--nota); color: white; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4); }
+.tab-btn.active-h { background: #334155; color: white; box-shadow: 0 4px 10px rgba(51, 65, 85, 0.4); }
+
+.his-filter-box { display:flex; gap:5px; margin-bottom:10px; padding:5px; background:#f1f5f9; border-radius:10px; }
+.his-btn { flex:1; padding:8px; border:none; border-radius:8px; font-size:10px; font-weight:bold; cursor:pointer; background:white; color:#64748b; }
+.his-btn.active { color:white; }
+.his-btn.h-trash.active { background: var(--danger); }
+.his-btn.h-move.active { background: var(--move); }
+.his-btn.h-edit.active { background: var(--edit); }
+.his-btn.h-all.active { background: #334155; }
+.trash-countdown { font-style: italic; font-size: 10px; color: var(--danger); }
+.history-item { font-size: 11px; padding: 12px; border-bottom: 1px solid #eee; text-align: left; line-height: 1.5; }
+.his-time { display:flex; justify-content:space-between; font-size:9px; color:#94a3b8; margin-top:3px; }
+.his-life { color: var(--danger); font-weight: bold; }
+
+.his-detail { font-size: 10px; color: #94a3b8; font-style: italic; }
+.his-act { font-style: italic; }
+
+.notify-box { background: white; padding: 12px 25px; border-radius: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 2px solid #eee; font-weight: bold; }
+#comp-notify.show { top: 40px; opacity: 1; }
+
 #txt-nota-title {
     text-align: center;
     color: var(--nota);
@@ -280,6 +338,12 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
     max-width: 100%;             
 }
 
+#preview-toolbar {
+    position: fixed; top: 0; background: #323639; width: 100%; padding: 10px; 
+    display: flex; justify-content: center; gap: 8px; z-index: 20001; flex-wrap: wrap;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
 .preview-header h2 {
     margin: 0;
     text-transform: uppercase;
@@ -289,39 +353,15 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
     line-height: 1.2;
 }
 
-#preview-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #222; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-top: 120px; z-index: 20000; }
-
-/* FIX: POPUP OVERLAY CENTER (STABLE VERSION) */
-.popup-overlay { 
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-    background: rgba(0,0,0,0.6); 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; /* CENTER VERTICAL & HORIZONTAL */
-    z-index: 99999; /* HIGH Z-INDEX */
-    opacity: 1; 
-    transition: opacity 0.3s; 
-}
-.popup-overlay.hidden { display: none !important; opacity: 0; pointer-events: none; }
-
-#comp-notify { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); pointer-events: none; transition: 0.3s; opacity: 0; z-index: 999999; }
-
-.popup-box { background: white; width: 85%; max-width: 380px; padding: 25px; border-radius: 24px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; }
-.popup-box input { 
-    width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px; margin-top: 15px; 
-    outline: none; box-sizing: border-box; font-size: 16px; 
-}
-.popup-box select { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px; margin-top: 10px; outline: none; box-sizing: border-box; font-size: 14px; background: #f8fafc; }
-
 #preview-paper { background: white; width: 450px; min-height: 800px; padding: 35px; color: black; box-sizing: border-box; border: 1px solid #ddd; position: relative; transition: 0.3s; transform-origin: top center; }
 #preview-paper table { width: 100%; border-collapse: collapse; border: 2px solid black; font-size: 13px; }
 #preview-paper th, #preview-paper td { padding: 8px; border-right: 1px solid black; border-bottom: 1px solid black; word-wrap: break-word; }
 #preview-paper th:last-child, #preview-paper td:last-child { border-right: none; }
 #preview-paper thead th { border-bottom: 2px solid black; background: #eee; }
 
-/* THEME MODERN - Small Gray Header */
+/* FIX: WRAP PADA TITLE DI TEMA MODERN */
 .theme-modern .preview-header { 
-    background: #f1f5f9 !important; /* ABU-ABU KECIL */
+    background: #f1f5f9 !important; 
     color: #1e293b; 
     min-height: auto !important; 
     display: flex; 
@@ -343,7 +383,10 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
     text-shadow: none !important; 
     letter-spacing: 0.5px; 
     text-align: center; 
-    line-height: 1; 
+    line-height: 1.3; 
+    white-space: pre-wrap !important; 
+    word-break: break-word !important; 
+    max-width: 100%; 
 }
 .theme-modern .preview-header::after { content: none !important; }
 .theme-modern .preview-date { color: #334155 !important; font-weight: bold; }
@@ -373,9 +416,6 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
     #preview-toolbar { display: none !important; }
 }
 
-/* =========================================
-   GLOBAL CLICK EFFECT (MENGECIL)
-   ========================================= */
 button:active, 
 .view-btn:active, 
 .nav-arrow:active, 
@@ -389,7 +429,6 @@ button:active,
     transition: transform 0.1s;
 }
 
-/* FIX KHUSUS UNTUK TRASH TRIGGER (Agar tidak loncat saat diklik) */
 .trash-trigger:active {
     transform: translateX(-50%) scale(0.9);
 }
