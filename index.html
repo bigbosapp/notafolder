@@ -1,232 +1,263 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nota Folder v121.15 - Sort Icon</title>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
+:root { 
+    --folder: #f59e0b; --nota: #2563eb; --danger: #ef4444; 
+    --success: #22c55e; --bg: #f8fafc; --text: #1e293b; 
+    --edit: #8b5cf6; --move: #f97316; --gray: #64748b;
+    --btn-shadow: #94a3b8;
+}
 
-<div id="comp-notify">
-    <div id="notify-box" class="notify-box"><span id="notify-msg">Pesan</span></div>
-</div>
+body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px 10px 110px 10px; transition: 0.3s; }
 
-<div id="comp-popup" class="popup-overlay hidden">
-    <div class="popup-box">
-        <div id="popup-icon" style="font-size: 40px; margin-bottom: 10px;">📁</div>
-        <h3 id="popup-title">Judul</h3>
-        
-        <div id="popup-content-calc" class="hidden" style="margin: 15px 0;">
-            <div id="popup-calc-list" class="calc-detail-box"></div>
-            <p style="font-size:12px; color:#64748b; margin-bottom:0px;">Total Terpilih:</p>
-            <div style="font-size:28px; font-weight:900; color:var(--success);">Rp <span id="popup-total-val">0</span></div>
-        </div>
+/* CONTAINER */
+.container { 
+    max-width: 750px; margin: auto; background: white; padding: 20px; border-radius: 16px; min-height: 90vh; box-shadow: 0 4px 20px rgba(0,0,0,0.05); position: relative; z-index: 1; transition: 0.3s; 
+}
 
-        <div id="popup-desc" class="hidden" style="font-size: 13px; color: gray; margin: 10px 0;"></div>
-        
-        <div id="popup-input-wrapper">
-            <input type="text" id="popup-input">
-            <div id="popup-opt-wrapper" class="hidden" style="margin-top: 10px; text-align: left; display: flex; align-items: center; gap: 8px;">
-                <input type="checkbox" id="popup-chk-open" style="width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: var(--nota);" checked>
-                <label for="popup-chk-open" style="font-style: italic; font-size: 11px; color: #64748b; cursor: pointer;">Buka langsung setelah dibuat</label>
-            </div>
-            <div id="popup-disc-wrapper" class="hidden" style="margin-top:10px;">
-                <select id="disc-type" style="margin-bottom:10px;">
-                    <option value="n">Rp (Nominal)</option>
-                    <option value="p">% (Persen)</option>
-                </select>
-                <input type="number" id="disc-val" placeholder="Nilai Diskon..." style="padding:12px; width:100%; box-sizing:border-box; border:2px solid #eee; border-radius:12px;">
-            </div>
-            <select id="popup-select" class="hidden"></select>
-        </div>
+/* DESKTOP MODE */
+body.is-desktop .container { max-width: 98%; padding: 15px; }
+body.is-desktop .list-container { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important; row-gap: 60px; column-gap: 15px; }
+body.is-desktop .grid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important; gap: 20px; }
+body.is-desktop .card { min-height: 90px; padding: 8px; font-size: 11px; }
+body.is-desktop .card-icon { font-size: 20px; margin-bottom: 2px; }
+body.is-desktop .list-item { height: 100%; }
 
-        <div id="popup-sort-wrapper" class="hidden" style="margin-top:15px;">
-            <div class="sort-grid">
-                <div class="sort-col">
-                    <div class="sort-header">Prioritas</div>
-                    <button class="sort-btn" id="s-p-mix" onclick="sysSortChange('p', 'mix')">Campur</button>
-                    <button class="sort-btn" id="s-p-folder" onclick="sysSortChange('p', 'folder')">Utamakan Folder</button>
-                    <button class="sort-btn" id="s-p-file" onclick="sysSortChange('p', 'file')">Utamakan File</button>
-                </div>
-                <div class="sort-col">
-                    <div class="sort-header">Urutan</div>
-                    <button class="sort-btn" id="s-o-created" onclick="sysSortChange('o', 'created')">Waktu Dibuat</button>
-                    <button class="sort-btn" id="s-o-edited" onclick="sysSortChange('o', 'edited')">Terakhir Edit</button>
-                    <button class="sort-btn" id="s-o-az" onclick="sysSortChange('o', 'az')">Huruf A-Z</button>
-                </div>
-            </div>
-        </div>
-        
-        <div style="display: flex; gap: 12px; margin-top: 25px;">
-            <button id="btn-popup-cancel" style="background:var(--danger); flex:1; color:white; font-weight:bold;" onclick="uiPopupClose()">Batal</button>
-            <button id="btn-popup-confirm" style="background:var(--nota); color:white; flex:2">Simpan</button>
-        </div>
-        
-        <button id="btn-popup-extra" class="hidden" style="margin-top: 10px; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; border: none; cursor: pointer; background: #f1f5f9; color: #64748b;">Batal</button>
-    </div>
-</div>
+/* EDITOR HIDE LOGIC */
+body.mode-editor .header-row, body.mode-editor .view-mode-bar, body.mode-editor .action-bar, 
+body.mode-editor .nav-right, body.mode-editor .trash-trigger, body.mode-editor #select-bar { display: none !important; }
+body.mode-editor .nav-wrapper { display: flex !important; background: transparent; padding: 0; margin-bottom: 20px; }
+@media screen and (max-width: 600px) {
+    body.mode-editor .nav-wrapper { display: flex !important; width: 100%; }
+    body.mode-editor .nav-left { width: 100%; background: transparent; padding: 0; border: none; }
+}
 
-<div class="container">
-    <div class="header-row">
-        <div class="version-tag" onclick="uiShowChangelog()">Nota Folder v121.15 (Sort Icon)</div>
-    </div>
-    
-    <div class="view-mode-bar">
-        <button id="vm-simple" class="view-btn active" onclick="sysChangeView('simple')">Sederhana</button>
-        <button id="vm-details" class="view-btn" onclick="sysChangeView('details')">Details</button>
-        <div style="flex:1"></div>
-        <button class="view-btn" onclick="sysAppResetConfirm()" style="margin-right:10px; color:var(--danger); font-weight:bold; font-size:16px; padding:2px 10px;">↻</button>
-        <div class="switch-container">
-             <label class="switch">
-                <input type="checkbox" id="layout-toggle" onchange="sysToggleLayout()">
-                <span class="slider round"></span>
-            </label>
-        </div>
-    </div>
+.header-row { display: flex; justify-content: flex-end; margin-bottom: 2px; }
+.version-tag { font-size: 10px; color: #94a3b8; font-style: italic; cursor: pointer; transition: 0.2s; }
+.version-tag:hover { color: var(--nota); text-decoration: underline; }
 
-    <div class="header-group">
-        <div class="nav-wrapper">
-            <div class="nav-left">
-                <button class="nav-arrow" onclick="navBack()">⬅</button>
-                <ul id="comp-breadcrumbs" class="breadcrumbs"></ul>
-            </div>
-            <div class="nav-right">
-                <input type="text" id="inp-search" placeholder="🔍 Cari..." oninput="sysSearch(this.value)" style="padding:6px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; width:100px; transition:0.3s;">
-                <button style="background:white; border:1px solid #ddd; padding:6px; font-size:10px; border-radius:8px;" onclick="sysExport()">💾 Export</button>
-                <button style="background:white; border:1px solid #ddd; padding:6px; font-size:10px; border-radius:8px;" onclick="document.getElementById('inp-import').click()">📂 Impor</button>
-                <input type="file" id="inp-import" class="hidden" accept=".json" onchange="sysImport(event)">
-            </div>
-        </div>
+.view-mode-bar { display: flex; gap: 5px; margin-bottom: 10px; align-items: center; }
+.view-btn { padding: 5px 12px; font-size: 11px; border: 1px solid #ddd; background: white; border-radius: 15px; cursor: pointer; color: var(--gray); transition: 0.2s; }
+.view-btn.active { background: var(--text); color: white; border-color: var(--text); font-weight: bold; }
 
-        <div class="action-bar">
-            <button class="btn-sort-icon" onclick="uiPopupOpen('sort')">⇅</button>
-            
-            <button class="btn-f" onclick="uiPopupOpen('folder')">+ Folder</button>
-            <button class="btn-n" onclick="uiPopupOpen('nota')">+ Nota</button>
-            <button id="btn-pilih-toggle" onclick="uiToggleSelection()">Pilih</button>
-        </div>
-    </div>
+/* SWITCH TOGGLE */
+.switch-container { display: flex; align-items: center; }
+.switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--nota); }
+input:checked + .slider:before { transform: translateX(16px); }
 
-    <div id="view-list">
-        <div id="select-bar" class="hidden">
-            <div class="select-actions">
-                <button class="btn-sel-act" style="background:var(--nota);" onclick="uiPopupOpen('move')">Pindahkan</button>
-                <button class="btn-sel-act" style="background:var(--success);" onclick="sysSumSelected()">Jumlahkan</button>
-                <button class="btn-sel-act" style="background:var(--danger);" onclick="sysConfirmDelete()">Hapus</button>
-            </div>
-            <div class="select-info">
-                <span id="txt-select-count" style="font-weight:bold; color:var(--danger); font-size:11px;">0 Item</span>
-                <input type="checkbox" id="cb-select-all" class="chk-all" onchange="sysToggleSelectAll(this.checked)">
-            </div>
-        </div>
+/* --- BUTTON SORT KECIL --- */
+.btn-sort-icon {
+    width: 45px; background: #f8fafc; color: #475569; border: 1px solid #cbd5e1;
+    font-size: 18px; display: flex; align-items: center; justify-content: center;
+    border-radius: 10px; cursor: pointer; flex: 0 0 auto;
+}
+.btn-sort-icon:hover { background: #e2e8f0; color: var(--nota); }
 
-        <div id="comp-grid" class="grid"></div>
-    </div>
+/* --- POPUP SORT --- */
+.sort-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; }
+.sort-col { display: flex; flex-direction: column; gap: 8px; }
+.sort-header { font-size: 12px; font-weight: bold; color: var(--nota); border-bottom: 2px solid #f1f5f9; padding-bottom: 5px; margin-bottom: 5px; }
+.sort-btn {
+    padding: 10px; font-size: 11px; background: white;
+    border: 1px solid #e2e8f0; border-radius: 8px; color: #64748b;
+    cursor: pointer; transition: 0.2s;
+}
+.sort-btn:hover { background: #f1f5f9; color: var(--text); }
+/* FIX: Active state forced with !important to override hover on desktop */
+.sort-btn.active {
+    background: var(--nota) !important; color: white !important;
+    border-color: var(--nota) !important; font-weight: bold;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+}
 
-    <div id="view-editor" class="hidden">
-        <h2 id="txt-nota-title"></h2>
-        
-        <div style="margin-bottom: 5px; display: flex; align-items: center; gap: 5px;">
-            <input type="checkbox" id="chk-show-date" onchange="toggleDateSection()" style="accent-color: var(--nota); width: 16px; height: 16px; cursor: pointer;">
-            <label for="chk-show-date" style="font-size: 12px; color: var(--nota); font-weight: 600; cursor: pointer;">Atur Tanggal</label>
-        </div>
+.header-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+.nav-wrapper { display: flex; align-items: center; justify-content: space-between; background: #f1f5f9; border-radius: 12px; padding: 8px 12px; order: 1; }
+.action-bar { display: flex; gap: 8px; order: 2; }
+.nav-left { display: flex; align-items: center; gap: 10px; overflow: hidden; height: 100%; }
+.nav-right { display: flex; gap: 5px; align-items: center; }
 
-        <div id="date-wrapper" class="hidden">
-            <div style="display:flex; gap:10px; margin-bottom: 10px;">
-                <button id="btn-mode-single" onclick="sysSetDateMode('single')" class="btn-date">Single Tgl</button>
-                <button id="btn-mode-double" onclick="sysSetDateMode('double')" class="btn-date">Double Tgl</button>
-            </div>
-            <div id="comp-date-row" style="display: grid; gap: 10px; margin-bottom: 15px;"></div>
-        </div>
-        
-        <div class="table-wrapper"><table class="editor-table"><thead id="comp-thead"></thead><tbody id="comp-tbody"></tbody></table></div>
-        
-        <div style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 15px;">
-            
-            <div style="flex: 1; min-width: 200px;">
-                 <div id="total-wrapper" style="text-align:center; margin-bottom: 15px; padding: 15px; border: 1px dashed #cbd5e1; border-radius: 12px;">
-                    <div style="font-size:12px; color:#64748b; font-weight:bold;">TOTAL BAYAR :</div>
-                    
-                    <div style="display:flex; justify-content:center; align-items:baseline; gap:5px;">
-                        <span id="txt-old-total" class="hidden" style="text-decoration:line-through; color:#94a3b8; font-size:10px; align-self: flex-start;"></span>
-                        <span style="font-size:2rem; font-weight:900; color:var(--nota);">Rp <span id="txt-total">0</span></span>
-                    </div>
+.nav-arrow { 
+    background: white; border: 1px solid #cbd5e1; color: var(--nota);
+    font-size: 20px; font-weight: 900; cursor: pointer; padding: 0;
+    width: 36px; height: 32px; border-radius: 8px;
+    box-shadow: 0 4px 0 var(--btn-shadow); margin-right: 12px; margin-bottom: 4px;
+    transition: all 0.1s; display: inline-flex; align-items: center; justify-content: center; line-height: 1;
+}
 
-                    <button onclick="uiPopupOpen('discount')" style="background:transparent; color:var(--nota); border:1px solid var(--nota); padding:5px 15px; border-radius:15px; font-size:11px; margin-top:5px; cursor:pointer;">+ Tambah Diskon</button>
-                </div>
+/* BUTTONS */
+.btn-screenshot { display: none; } 
+.btn-download { display: inline-block; } 
+.btn-print { display: inline-block; } 
 
-                <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 5px;">
-                    <input type="checkbox" id="chk-show-note" onchange="toggleInput('note')" style="accent-color: var(--nota); width: 16px; height: 16px; cursor: pointer;">
-                    <label for="chk-show-note" style="font-size: 12px; color: var(--nota); font-weight: 600; cursor: pointer;">Tambah Keterangan</label>
-                </div>
-                <textarea id="inp-nota-note" class="compact-area hidden" style="margin-top:0;" oninput="editStatus(false)" placeholder="Keterangan (Opsional)..." rows="3"></textarea>
+button { cursor: pointer; border-radius: 10px; border: none; font-weight: 600; padding: 12px; font-size: 13px; transition: 0.2s; outline: none; }
+.btn-f { background: var(--folder); color: white; flex: 1; }
+.btn-n { background: var(--nota); color: white; flex: 1; }
+#btn-pilih-toggle { background: var(--success); color: white; flex: 0.6; }
 
-                <div style="display: flex; align-items: center; gap: 5px; margin-top: 10px; margin-bottom: 5px;">
-                    <input type="checkbox" id="chk-show-resi" onchange="toggleInput('resi')" style="accent-color: var(--nota); width: 16px; height: 16px; cursor: pointer;">
-                    <label for="chk-show-resi" style="font-size: 12px; color: var(--nota); font-weight: 600; cursor: pointer;">Tambah No. Resi</label>
-                </div>
-                <input type="text" id="inp-resi" class="hidden" style="margin-top:0;" placeholder="No. Resi / Paket (Opsional)..." oninput="editStatus(false)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; box-sizing:border-box;">
-            </div>
-            
-        </div>
-        
-        <div style="margin-top: 25px; display: flex; flex-direction: column; gap: 10px;">
-            <div style="display: flex; gap: 10px;">
-                <button style="background:var(--nota); color:white; flex:1; padding:12px; border-radius:8px;" onclick="editAddRow()">+ TAMBAH BARIS</button>
-                <button style="background:var(--danger); color:white; flex:1; padding:12px; border-radius:8px;" onclick="editDeleteSelectedRows()">HAPUS TERPILIH</button>
-            </div>
-            <div style="display:flex; gap:10px">
-                <button id="btn-preview-trigger" style="background:#065f46; color:white; flex:1;" onclick="uiPreview(true)">PREVIEW</button>
-                <button style="background:var(--success); color:white; flex:1;" onclick="editSave()">SIMPAN NOTA</button>
-            </div>
-            <p id="txt-save-status" style="text-align:center; font-size:11px; color:var(--danger); font-weight:bold;">⚠ Belum disimpan!</p>
-        </div>
-    </div>
-</div>
+@media screen and (max-width: 600px) {
+    body.mode-editor { padding-bottom: 350px !important; }
+    .switch-container { display: none !important; }
+    .btn-screenshot { display: inline-block !important; }
 
-<div class="trash-trigger" onclick="uiTrashOpen()">🗑️</div>
-<div id="comp-trash-modal" class="modal-full hidden">
-    <div class="modal-inner">
-        <div style="display:flex; gap:4px; margin-bottom:15px;">
-            <button id="tab-f" class="tab-btn" onclick="uiTrashTab('folder')">Folder</button>
-            <button id="tab-n" class="tab-btn" onclick="uiTrashTab('nota')">Nota</button>
-            <button id="tab-h" class="tab-btn" onclick="uiTrashTab('history')">History</button>
-        </div>
-        <div id="history-filter-bar" class="his-filter-box hidden">
-            <button class="his-btn h-trash" onclick="renderHistoryList('trash')">SAMPAH</button>
-            <button class="his-btn h-move" onclick="renderHistoryList('move')">PINDAH</button>
-            <button class="his-btn h-edit" onclick="renderHistoryList('edit')">EDIT</button>
-            <button class="his-btn h-all active" onclick="renderHistoryList('all')">SEMUA</button>
-        </div>
-        <div id="trash-list-content" style="min-height:200px; overflow-y:auto; flex:1;"></div>
-        <button id="btn-trash-empty" style="background:var(--danger); color:white; width:100%; padding:12px; border-radius:10px; font-weight:bold; margin-top:15px;" onclick="sysConfirmTrashEmpty()">KOSONGKAN SAMPAH</button>
-        <button style="background:#eee; width:100%; padding:12px; border-radius:10px; margin-top:10px; font-weight:bold;" onclick="uiTrashClose()">TUTUP</button>
-    </div>
-</div>
+    body:not(.is-desktop):not(.mode-editor) .header-group { gap: 8px; }
+    body:not(.is-desktop):not(.mode-editor) .nav-wrapper { display: contents; } 
+    body:not(.is-desktop):not(.mode-editor) .nav-right { order: 1; width: 100%; display: flex; gap: 5px; margin-bottom: 5px; }
+    body:not(.is-desktop):not(.mode-editor) .action-bar { order: 2; margin-bottom: 5px; }
+    body:not(.is-desktop) .nav-left { order: 3; width: 100%; background: #f1f5f9; padding: 8px 12px; border-radius: 10px; border-top: 2px solid white; min-height: 52px; box-sizing: border-box; display: flex; align-items: center; }
+    body:not(.is-desktop) .breadcrumbs { font-size: 12px; }
+    body:not(.is-desktop) #inp-search { flex: 1; min-width: 150px; }
+}
 
-<div id="preview-screen" class="hidden">
-    <div id="preview-toolbar">
-        <select onchange="sysChangeTheme(this.value)" style="padding:8px; border-radius:8px; border:none; background:#eee; font-weight:bold; font-size:12px;">
-            <option value="standard">Tampilan: Standar</option>
-            <option value="modern">Tampilan: Modern 3D</option>
-            <option value="transparent">Tampilan: Transparan</option>
-        </select>
-        <button id="btn-foot-toggle" style="background:var(--folder); color:white; padding:8px 12px; font-size:12px;" onclick="sysToggleFootnote()">Catatan: OFF</button>
-        
-        <button class="btn-download" style="background:var(--success); color:white; padding:8px 12px; font-size:12px;" onclick="sysDownloadImg()">💾 IMAGE</button>
-        
-        <button style="background:#8b5cf6; color:white; padding:8px 12px; font-size:12px;" onclick="uiPopupOpen('html_export')">💾 HTML</button>
-        
-        <button class="btn-screenshot" style="background:var(--success); color:white; padding:8px 12px; font-size:12px;" onclick="sysEnterScreenshotMode()">📸 SCREENSHOT</button>
-        <button class="btn-print" style="background:#0ea5e9; color:white; padding:8px 12px; font-size:12px;" onclick="sysPrint()">🖨️ PDF</button>
-        
-        <button style="background:var(--danger); color:white; padding:8px 15px; font-size:14px; font-weight:bold;" onclick="uiPreview(false)">X</button>
-    </div>
-    <div id="preview-paper"><div id="preview-content"></div></div>
-</div>
+body.is-clean-mode #preview-toolbar { display: none !important; }
+body.is-clean-mode #preview-paper { margin-top: 50px !important; }
 
-<script src="js/script.js"></script>
-</body>
-</html>
+.breadcrumbs { display: flex; flex-wrap: nowrap; list-style: none; padding: 0; margin: 0; font-size: 13px; overflow-x: auto; scrollbar-width: none; align-items: center; }
+.breadcrumbs li { color: var(--nota); cursor: pointer; font-weight: 600; white-space: nowrap; }
+.breadcrumbs li::after { content: "/"; margin: 0 8px; color: #cbd5e1; }
+.breadcrumbs li:last-child::after { content: none; }
+.breadcrumbs li.active-file { color: #64748b; cursor: default; font-style: italic; }
+
+.hidden { display: none !important; }
+#select-bar { background: #fee2e2; padding: 10px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #fecaca; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.select-actions { display: flex; gap: 5px; flex: 1; overflow-x: auto; }
+.select-info { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.btn-sel-act { padding: 8px 10px; border-radius: 8px; font-size: 11px; color: white; border: none; font-weight: bold; flex-shrink: 0; }
+input[type="checkbox"].chk-all { appearance: none; width: 24px; height: 24px; border: 2px solid var(--danger); border-radius: 6px; background: white; cursor: pointer; position: relative; }
+input[type="checkbox"].chk-all:checked { background: var(--danger); }
+input[type="checkbox"].chk-all:checked::after { content: '✔'; position: absolute; color: white; font-size: 16px; top: 50%; left: 50%; transform: translate(-50%, -55%); }
+
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.card { padding: 15px 10px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; cursor: pointer; background: white; min-height: 115px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; border-top: 5px solid #ccc; transition: 0.15s; }
+.card.selected { border: 3px solid var(--danger) !important; background: #fff1f2 !important; transform: scale(0.96); }
+.card-icon { font-size: 24px; margin-bottom: 5px; }
+.time-label { font-size: 9px; color: #94a3b8; margin-top: 5px; }
+.card b { display: block; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; box-sizing: border-box; }
+
+.btn-rename-u, .btn-quick-view { 
+    position: absolute; right: 6px; 
+    color: #475569; background: #f1f5f9; 
+    font-size: 14px; width: 28px; height: 28px; border-radius: 50%; 
+    display: flex; align-items: center; justify-content: center;
+    transition: 0.2s; cursor: pointer; z-index: 10; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.btn-rename-u { top: 6px; }
+.btn-quick-view { bottom: 6px; }
+
+.btn-rename-u:hover, .btn-quick-view:hover { background: var(--nota) !important; color: white !important; transform: scale(1.1); }
+
+/* --- LIST DETAILS --- */
+.list-container { display: grid; grid-template-columns: repeat(2, 1fr); row-gap: 60px; column-gap: 10px; }
+.list-item { display: flex; flex-direction: column; align-items: center; text-align: center; background: white; border: 1px solid #e2e8f0; padding: 12px; padding-top: 35px; border-radius: 8px; cursor: pointer; transition: 0.1s; position: relative; height: 100%; justify-content: space-between; }
+.list-item:hover { background: #f8fafc; border-color: #cbd5e1; }
+.list-item.selected { border: 2px solid var(--danger); background: #fff1f2; }
+.list-icon { font-size: 24px; margin-bottom: 8px; min-width: 30px; margin-right: 0; }
+.list-body { width: 100%; display: flex; flex-direction: column; overflow: hidden; margin-bottom: 25px; flex: 1; }
+.list-item .btn-rename-u { position: absolute; top: 6px; right: 6px; transform: none; background: #f1f5f9; z-index: 20; }
+.list-item .btn-quick-view { position: absolute; bottom: 6px; right: 6px; z-index: 20; }
+.list-title { font-weight: bold; font-size: 13px; color: var(--text); margin-bottom: 6px; white-space: normal; word-break: break-word; line-height: 1.3; width: 100%; }
+.list-meta-row { display: flex; flex-direction: column; gap: 2px; font-size: 10px; color: #64748b; text-align: center; width: 100%; }
+.meta-line { display: flex; align-items: center; justify-content: center; gap: 4px; }
+
+.table-wrapper { width: 100%; overflow-x: auto; margin-top: 15px; border-radius: 8px; max-height: 350px; overflow-y: auto; border: 1px solid #e2e8f0; }
+table.editor-table { width: 100%; border-collapse: collapse; min-width: 450px; }
+table.editor-table thead th { position: sticky; top: 0; z-index: 10; background: #f8fafc; padding: 10px; text-align: left; border-bottom: 2px solid #e2e8f0; font-size: 12px; color: var(--nota); }
+table.editor-table td { padding: 8px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+
+textarea.edit-inp { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; font-size: 13px; resize: none; overflow: hidden; min-height: 38px; line-height: 1.4; display: block; }
+.col-barang { min-width: 120px; } .col-jml { min-width: 50px; text-align: center; } .col-harga { min-width: 90px; }
+input.edit-inp-date { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: inherit; resize: vertical; min-height: 60px; box-sizing: border-box; }
+.row-chk { width: 20px; height: 20px; accent-color: var(--danger); cursor: pointer; display: block; margin: auto; }
+.btn-date { flex: 1; font-size: 10px; padding: 8px; background: #eee; border-radius: 8px; color: #64748b; }
+.btn-date.active { background: var(--nota); color: white; }
+.btn-add-col-circle { background: var(--nota); color: white; width: 25px; height: 25px; border-radius: 50%; font-size: 18px; display: flex; align-items: center; justify-content: center; margin: auto; cursor: pointer; font-weight: bold; }
+
+.trash-trigger { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--danger); color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); border: 3px solid white; cursor: pointer; z-index: 8000; }
+.modal-full { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+.modal-inner { background: white; width: 95%; max-width: 500px; border-radius: 24px; padding: 20px; max-height: 85vh; overflow-y: auto; display:flex; flex-direction:column; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+
+#preview-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-top: 120px; z-index: 20000; }
+.popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: flex-start; padding-top: 15vh; z-index: 30000; opacity: 1; transition: opacity 0.3s; }
+.popup-overlay.hidden { opacity: 0; pointer-events: none; }
+#comp-notify { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); pointer-events: none; transition: 0.3s; opacity: 0; z-index: 40000; }
+
+.popup-box { background: white; width: 85%; max-width: 380px; padding: 25px; border-radius: 24px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); position: relative; }
+.popup-box input { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px; margin-top: 15px; outline: none; box-sizing: border-box; font-size: 16px; }
+.popup-box select { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px; margin-top: 10px; outline: none; box-sizing: border-box; font-size: 14px; background: #f8fafc; }
+
+.calc-detail-box { max-height: 200px; overflow-y: auto; text-align: left; background: #f8fafc; border-radius: 12px; padding: 10px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
+.calc-row { display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding: 8px 0; font-size: 12px; align-items: center; }
+.calc-row:last-child { border-bottom: none; }
+.calc-row.is-folder { color: var(--folder); font-weight: bold; }
+.calc-row.is-nota { color: var(--text); }
+.calc-icon-sm { margin-right: 6px; font-size: 14px; }
+
+.delete-list-box { display: block !important; max-height: 180px; overflow-y: auto; text-align: left; background: #fff1f2; border: 2px solid #fecaca; padding: 10px; border-radius: 8px; margin: 15px 0; font-size: 13px; color: #1e293b; width: 100%; box-sizing: border-box; }
+.del-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px dashed #fecaca; }
+.del-item:last-child { border-bottom: none; }
+.del-item b { color: var(--danger); font-weight: 700; }
+
+.tab-btn { flex: 1; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 13px; border: none; background: #f1f5f9; color: #94a3b8; transition: 0.2s; box-shadow: none; }
+.tab-btn.active-f { background: var(--folder); color: white; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4); }
+.tab-btn.active-n { background: var(--nota); color: white; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4); }
+.tab-btn.active-h { background: #334155; color: white; box-shadow: 0 4px 10px rgba(51, 65, 85, 0.4); }
+
+.his-filter-box { display:flex; gap:5px; margin-bottom:10px; padding:5px; background:#f1f5f9; border-radius:10px; }
+.his-btn { flex:1; padding:8px; border:none; border-radius:8px; font-size:10px; font-weight:bold; cursor:pointer; background:white; color:#64748b; }
+.his-btn.active { color:white; }
+.his-btn.h-trash.active { background: var(--danger); }
+.his-btn.h-move.active { background: var(--move); }
+.his-btn.h-edit.active { background: var(--edit); }
+.his-btn.h-all.active { background: #334155; }
+.trash-countdown { font-style: italic; font-size: 10px; color: var(--danger); }
+.history-item { font-size: 11px; padding: 12px; border-bottom: 1px solid #eee; text-align: left; line-height: 1.5; }
+.his-time { display:flex; justify-content:space-between; font-size:9px; color:#94a3b8; margin-top:3px; }
+.his-life { color: var(--danger); font-weight: bold; }
+.his-detail { font-size: 10px; color: #94a3b8; font-style: italic; }
+.his-act { font-style: italic; }
+
+.notify-box { background: white; padding: 12px 25px; border-radius: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 2px solid #eee; font-weight: bold; }
+#comp-notify.show { top: 40px; opacity: 1; }
+
+#txt-nota-title { text-align: center; color: var(--nota); margin-bottom: 5px; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; line-height: 1.2; max-width: 100%; }
+#preview-toolbar { position: fixed; top: 0; background: #323639; width: 100%; padding: 10px; display: flex; justify-content: center; gap: 8px; z-index: 20001; flex-wrap: wrap; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+.preview-header h2 { margin: 0; text-transform: uppercase; white-space: normal; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.2; }
+#preview-paper { background: white; width: 450px; min-height: 800px; padding: 35px; color: black; box-sizing: border-box; border: 1px solid #ddd; position: relative; transition: 0.3s; transform-origin: top center; }
+#preview-paper table { width: 100%; border-collapse: collapse; border: 2px solid black; font-size: 13px; }
+#preview-paper th, #preview-paper td { padding: 8px; border-right: 1px solid black; border-bottom: 1px solid black; word-wrap: break-word; }
+#preview-paper th:last-child, #preview-paper td:last-child { border-right: none; }
+#preview-paper thead th { border-bottom: 2px solid black; background: #eee; }
+
+/* FIX: WRAP PADA TITLE DI TEMA MODERN */
+.theme-modern .preview-header { background: #f1f5f9 !important; color: #1e293b; min-height: auto !important; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto !important; border: none !important; padding: 10px 25px; border-radius: 8px; width: fit-content; box-shadow: none; }
+.theme-modern h2 { color: #1e293b !important; margin: 0; font-style: normal !important; font-weight: 800 !important; font-size: 20px; text-shadow: none !important; letter-spacing: 0.5px; text-align: center; line-height: 1.3; white-space: pre-wrap !important; word-break: break-word !important; max-width: 100%; }
+.theme-modern .preview-header::after { content: none !important; }
+.theme-modern .preview-date { color: #334155 !important; font-weight: bold; }
+.theme-modern table { border: none !important; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+.theme-modern thead { background: #f1f5f9 !important; }
+.theme-modern th, .theme-modern td { border: none !important; border-bottom: 1px solid #f1f5f9 !important; border-right: 1px solid #e2e8f0 !important; padding: 12px !important; color: #475569; }
+.theme-modern th:last-child, .theme-modern td:last-child { border-right: none !important; }
+.theme-modern th { color: #334155; font-weight: 800; text-transform: uppercase; }
+.theme-modern .preview-total { color: #2563eb !important; text-shadow: none !important; }
+
+.theme-transparent { border: none !important; background: transparent !important; }
+.theme-transparent .preview-header { border-bottom: 4px solid black !important; padding-bottom: 10px; margin-bottom: 20px !important; text-align: center; }
+.theme-transparent table { border: none !important; }
+.theme-transparent th { border: none !important; border-bottom: 2px solid black !important; border-right: 1px dotted black !important; background: transparent !important; color: black !important; font-weight: 900; }
+.theme-transparent td { border: none !important; border-bottom: 1px dotted #999 !important; border-right: 1px dotted black !important; color: black !important; }
+.theme-transparent th:last-child, .theme-transparent td:last-child { border-right: none !important; }
+.theme-transparent .preview-total { text-decoration: underline; }
+
+@media screen and (max-width: 500px) { #preview-paper { margin-bottom: 20px; } }
+@media print {
+    body * { visibility: hidden; }
+    #preview-screen, #preview-screen * { visibility: visible; }
+    #preview-screen { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: white; z-index: 99999; padding: 0; }
+    #preview-paper { transform: none !important; margin: 0 !important; width: 100%; border: none; box-shadow: none; }
+    #preview-toolbar { display: none !important; }
+}
+
+button:active, .view-btn:active, .nav-arrow:active, .card:active, .list-item:active, .btn-rename-u:active, .btn-quick-view:active, .his-btn:active, .btn-add-col-circle:active, .sort-btn:active, .btn-sort-icon:active { transform: scale(0.95); transition: transform 0.1s; }
+.trash-trigger:active { transform: translateX(-50%) scale(0.9); }
