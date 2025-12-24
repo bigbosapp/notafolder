@@ -10,9 +10,56 @@ let resetTimer = null;
 /* --- CORE FUNCTIONS --- */
 function dbSave() { localStorage.setItem(DB_KEY, JSON.stringify(storage)); localStorage.setItem(HIS_KEY, JSON.stringify(moveHis)); }
 
+// --- NEW: CLEANUP & SANITIZE ---
+function sysSanitizeDB() {
+    let changed = false;
+    storage.forEach(item => {
+        if (item.parentId && item.parentId !== 'HOME') {
+            const parentExists = storage.some(p => p.id === item.parentId && !p.inTrash);
+            if (!parentExists) {
+                item.parentId = null; // Ghost Folder -> Move to Home
+                changed = true;
+            }
+        }
+    });
+    if(changed) dbSave();
+}
+
+function sysAutoCleanup() {
+    const now = Date.now();
+    const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+    
+    // Cleanup Trash (Hapus Permanen item sampah > 2 hari)
+    const initialStorageLen = storage.length;
+    storage = storage.filter(item => {
+        if (item.inTrash && item.deletedAt) {
+            const age = now - new Date(item.deletedAt).getTime();
+            return age < TWO_DAYS_MS;
+        }
+        return true;
+    });
+    
+    // Cleanup History (Hapus Log > 2 hari)
+    const initialHisLen = moveHis.length;
+    moveHis = moveHis.filter(h => {
+        const age = now - (h.timestamp || now);
+        return age < TWO_DAYS_MS;
+    });
+
+    if (storage.length !== initialStorageLen || moveHis.length !== initialHisLen) {
+        dbSave();
+        console.log("Auto Cleanup: Removed expired items/history.");
+    }
+}
+
 function getUniqueName(name, parentId, type) {
     let newName = name; let counter = 1;
-    while (storage.some(i => i.parentId === parentId && i.type === type && i.name.toLowerCase() === newName.toLowerCase() && !i.inTrash)) { newName = `${name} (${counter})`; counter++; }
+    let safeGuard = 0; 
+    while (storage.some(i => i.parentId === parentId && i.type === type && i.name.toLowerCase() === newName.toLowerCase() && !i.inTrash) && safeGuard < 500) { 
+        newName = `${name} (${counter})`; 
+        counter++; 
+        safeGuard++;
+    }
     return newName;
 }
 
@@ -29,17 +76,18 @@ function getTimeAgo(iso) { const diff = (new Date() - new Date(iso)) / 1000; if 
 
 function sysNum(val) {
     if (!val) return 0;
-    const clean = val.toString().replace(/\./g, '');
+    const clean = val.toString().replace(/\./g, '').replace(',', '.');
     return parseFloat(clean) || 0;
 }
 
 /* --- UI SYSTEM --- */
 function uiShowChangelog() {
     const logs = [
-        "<b>v120.9.13</b>: Stable Popup (Center) & Fix Semua Bug Layout.",
-        "<b>v120.9.11</b>: Fix Rename Button (PC & Details).",
-        "<b>v120.9.10</b>: Fix Preview Layout Mobile.",
-        "<b>v120.9.8</b>: Fix Title Wrap (Judul Panjang)."
+        "<b>v121.11</b>: Auto Clean (2 Hari) & Ghost Fix.",
+        "<b>v121.9</b>: Stable Move & Zoom Fix.",
+        "<b>v121.8</b>: Fix Tombol Move & Layout Overlap.",
+        "<b>v121.7</b>: Fix Modern Title Wrap.",
+        "<b>v121.5</b>: Preview Background Transparan & Scale Down."
     ];
     uiPopupOpen('changelog', logs);
 }
@@ -265,7 +313,7 @@ function navGo(id) {
     document.getElementById('view-editor').classList.add('hidden'); 
     document.getElementById('view-list').classList.remove('hidden'); 
     document.getElementById('select-bar').classList.add('hidden'); 
-    document.getElementById('inp-search').value = ""; // Clear Search
+    document.getElementById('inp-search').value = ""; 
     
     navRenderGrid();
     localStorage.setItem('notafolder_cur_parent', id || '');
@@ -288,7 +336,6 @@ function navBack(isHardware = false) {
     }
 }
 
-// BROWSER BACK HANDLER
 window.onpopstate = function(event) { 
     if(!document.getElementById('comp-popup').classList.contains('hidden')) { uiPopupClose(); return; } 
     if(!document.getElementById('comp-trash-modal').classList.contains('hidden')) { uiTrashClose(); return; } 
@@ -300,7 +347,6 @@ window.onpopstate = function(event) {
             const noteId = event.state.id;
             const n = storage.find(x => x.id === noteId);
             if(n) {
-                // Restore Editor State without pushing new history
                 activeId = noteId;
                 curParent = n.parentId;
                 
@@ -347,7 +393,7 @@ function sysChangeTheme(theme) { curTheme = theme; const paper = document.getEle
 /* --- HISTORY & TRASH --- */
 function sysAddHistory(msg, type = 'general') { const now = Date.now(); const t = new Date().toLocaleString('id-ID'); moveHis.unshift({ msg: msg, fullTime: t, type: type, timestamp: now }); const typeItems = moveHis.filter(h => h.type === type || (type === 'trash' && (h.type === 'trash' || h.type === 'restore'))); if (typeItems.length > 50) { const itemToRemove = typeItems[typeItems.length - 1]; moveHis = moveHis.filter(h => h !== itemToRemove); } dbSave(); }
 
-function renderHistoryList(filter) { const list = document.getElementById('trash-list-content'); list.innerHTML = ''; const now = Date.now(); const maxAge = 15 * 24 * 60 * 60 * 1000; moveHis = moveHis.filter(h => { const itemTime = h.timestamp || now; return (now - itemTime) < maxAge; }); dbSave(); document.querySelectorAll('.his-btn').forEach(b => b.classList.remove('active')); document.querySelector(`.his-btn.h-${filter}`).classList.add('active'); const filtered = (filter === 'all') ? moveHis : moveHis.filter(h => { if(filter === 'trash') return h.type === 'trash' || h.type === 'restore'; return h.type === filter; }); if(filtered.length === 0) { list.innerHTML = '<div style="text-align:center; padding:20px; color:gray;">Belum ada riwayat</div>'; return; } filtered.forEach(h => { let borderColor = '#eee'; if(h.type === 'move') borderColor = 'var(--move)'; if(h.type === 'edit') borderColor = 'var(--edit)'; if(h.type === 'trash' || h.type === 'restore') borderColor = 'var(--danger)'; const itemTime = h.timestamp || now; const daysLeft = Math.ceil((maxAge - (now - itemTime)) / (86400000)); list.innerHTML += `<div class="history-item" style="border-left: 4px solid ${borderColor};">${h.msg}<div class="his-time"><span>${h.fullTime}</span><span class="his-life">Sisa ${daysLeft} Hari</span></div></div>`; }); }
+function renderHistoryList(filter) { const list = document.getElementById('trash-list-content'); list.innerHTML = ''; const now = Date.now(); const maxAge = 2 * 24 * 60 * 60 * 1000; moveHis = moveHis.filter(h => { const itemTime = h.timestamp || now; return (now - itemTime) < maxAge; }); dbSave(); document.querySelectorAll('.his-btn').forEach(b => b.classList.remove('active')); document.querySelector(`.his-btn.h-${filter}`).classList.add('active'); const filtered = (filter === 'all') ? moveHis : moveHis.filter(h => { if(filter === 'trash') return h.type === 'trash' || h.type === 'restore'; return h.type === filter; }); if(filtered.length === 0) { list.innerHTML = '<div style="text-align:center; padding:20px; color:gray;">Belum ada riwayat</div>'; return; } filtered.forEach(h => { let borderColor = '#eee'; if(h.type === 'move') borderColor = 'var(--move)'; if(h.type === 'edit') borderColor = 'var(--edit)'; if(h.type === 'trash' || h.type === 'restore') borderColor = 'var(--danger)'; const itemTime = h.timestamp || now; const daysLeft = Math.ceil((maxAge - (now - itemTime)) / (86400000)); list.innerHTML += `<div class="history-item" style="border-left: 4px solid ${borderColor};">${h.msg}<div class="his-time"><span>${h.fullTime}</span><span class="his-life">🕒 ${daysLeft} Hari</span></div></div>`; }); }
 
 /* --- POPUP SYSTEM --- */
 function uiPopupReset() {
@@ -448,39 +494,18 @@ function uiPopupOpen(type, extra = null) {
         icon.innerText = '🚚'; title.innerText = "Pindahkan Item"; 
         desc.innerText = "Pilih Folder Tujuan:"; desc.classList.remove('hidden'); wrap.classList.remove('hidden'); input.classList.add('hidden'); sel.classList.remove('hidden'); 
         
-        // FIX: Ancestor Check Logic (Ghost Folder Fix)
-        const validDestinations = storage.filter(f => {
-            if (f.type !== 'folder') return false; 
-            if (f.inTrash) return false; 
-            if (f.id === curParent) return false; 
-            
-            // Prevent recursive move (parent into child)
-            let tempParent = f.parentId;
-            while(tempParent) {
-                if(selIds.includes(tempParent)) return false; 
-                const p = storage.find(x => x.id === tempParent);
-                if(!p) break;
-                tempParent = p.parentId;
-            }
-            if (selIds.includes(f.id)) return false; 
-
-            // FIX: Check if ancestors are in trash
-            let pointer = f.parentId;
-            while(pointer) {
-                const parentObj = storage.find(x => x.id === pointer);
-                if(!parentObj) break; 
-                if(parentObj.inTrash) return false; // Ancestor in trash!
-                pointer = parentObj.parentId;
-            }
-
-            return true;
-        });
+        const validDestinations = storage.filter(f => !f.inTrash && f.type === 'folder' && !selIds.includes(f.id)); 
 
         sel.innerHTML = '<option value="">-- Pilih Folder --</option><option value="HOME">🏠 BERANDA</option>'; 
         validDestinations.sort((a,b)=>a.name.localeCompare(b.name)).forEach(f => { sel.innerHTML += `<option value="${f.id}">📁 ${f.name}</option>`; }); 
         
         btn.innerText = "Pindah"; btn.style.background = "var(--folder)"; 
-        btn.onclick = () => { sysMove(sel.value); }; 
+        
+        btn.onclick = () => { 
+            if (!sel.value) return uiNotify("Pilih tujuan!", "danger");
+            uiPopupClose(); 
+            sysMove(sel.value); 
+        }; 
     }
     else if(type === 'col') { 
         icon.innerText = '➕'; title.innerText = "Tambah Variasi"; 
@@ -504,32 +529,28 @@ function uiPopupClose() { document.getElementById('comp-popup').classList.add('h
 function sysCreate(type, name, autoOpen) { const id = 'ID'+Date.now(); storage.push({ id, parentId: curParent, name, type, uCode: type==='folder'?Math.random().toString(36).substring(2,5).toUpperCase():null, inTrash: false, createdAt: new Date().toISOString(), lastEdited: new Date().toISOString(), items: [], dateMode: 'single', customCols: [], showDate: false, showNote: false, showResi: false, showNum: true, discType:'n', discVal:0 }); dbSave(); if (autoOpen) { type === 'folder' ? navGo(id) : editOpen(id); } else { navRenderGrid(); } uiNotify("Berhasil!"); }
 
 function sysMove(targetId) { 
-    if(!targetId && targetId !== null) return; 
-
-    let targetName = "BERANDA";
-    if (targetId === 'HOME') {
-        targetId = null;
-    } else {
-        const targetFolder = storage.find(f => f.id === targetId && !f.inTrash);
-        if (!targetFolder) return uiNotify("Folder tujuan tidak valid!", "danger");
-        targetName = targetFolder.name;
-    }
-
-    let moveCount = 0;
+    if(targetId === 'HOME') targetId = null; 
+    let count = 0;
+    
     storage.forEach(i => {
         if(selIds.includes(i.id)) {
-            sysAddHistory(`<b>${i.name}</b> <span class="his-detail">dipindahkan ke</span> 📁 ${targetName}`, 'move');
             i.parentId = targetId;
-            moveCount++;
+            count++;
         }
     });
 
-    if(moveCount > 0) {
+    if(count > 0) {
         dbSave();
-        uiPopupClose();
-        uiToggleSelection();
+        selMode = false; 
+        selIds = [];
+        document.getElementById('select-bar').classList.add('hidden');
+        document.getElementById('btn-pilih-toggle').innerText = "Pilih";
+        document.getElementById('btn-pilih-toggle').style.background = "var(--success)";
+        
         navRenderGrid();
-        uiNotify(`Berhasil memindahkan ${moveCount} item!`);
+        uiNotify(`Berhasil pindah ${count} item!`);
+    } else {
+        uiNotify("Gagal memindahkan.");
     }
 }
 
@@ -551,7 +572,7 @@ function sysRestore(id) {
 
 function uiTrashOpen() { document.getElementById('comp-trash-modal').classList.remove('hidden'); uiTrashTab('folder'); }
 function uiTrashClose() { document.getElementById('comp-trash-modal').classList.add('hidden'); }
-function uiTrashTab(t) { curTrashTab = t; const tabs = { folder: 'tab-f', nota: 'tab-n', history: 'tab-h' }; Object.keys(tabs).forEach(k => { document.getElementById(tabs[k]).className = 'tab-btn' + (k === t ? ' active-' + (t==='history'?'h':t[0]) : ''); }); const list = document.getElementById('trash-list-content'); list.innerHTML = ''; const btnEmpty = document.getElementById('btn-trash-empty'); const filterBar = document.getElementById('history-filter-bar'); if(t === 'history') { btnEmpty.classList.add('hidden'); filterBar.classList.remove('hidden'); renderHistoryList('all'); } else { btnEmpty.classList.remove('hidden'); filterBar.classList.add('hidden'); const now = new Date(); storage.filter(i => i.inTrash && i.type === t).forEach(i => { const exp = new Date(new Date(i.deletedAt).getTime() + 30*86400000) - now; const d = Math.floor(exp/86400000), h = Math.floor((exp%86400000)/3600000), m = Math.floor((exp%3600000)/60000); list.innerHTML += `<div style="padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;"><div style="text-align:left"><b>${i.name}</b><br><span class="trash-countdown">Sisa ${d}H ${h}J ${m}M</span></div><button onclick="sysRestore('${i.id}')" style="background:var(--nota);color:white;padding:5px 10px;border-radius:5px;font-size:10px">Restore</button></div>`; }); } }
+function uiTrashTab(t) { curTrashTab = t; const tabs = { folder: 'tab-f', nota: 'tab-n', history: 'tab-h' }; Object.keys(tabs).forEach(k => { document.getElementById(tabs[k]).className = 'tab-btn' + (k === t ? ' active-' + (t==='history'?'h':t[0]) : ''); }); const list = document.getElementById('trash-list-content'); list.innerHTML = ''; const btnEmpty = document.getElementById('btn-trash-empty'); const filterBar = document.getElementById('history-filter-bar'); if(t === 'history') { btnEmpty.classList.add('hidden'); filterBar.classList.remove('hidden'); renderHistoryList('all'); } else { btnEmpty.classList.remove('hidden'); filterBar.classList.add('hidden'); const now = new Date(); storage.filter(i => i.inTrash && i.type === t).forEach(i => { const exp = new Date(new Date(i.deletedAt).getTime() + 2*24*60*60*1000) - now; const d = Math.floor(exp/86400000), h = Math.floor((exp%86400000)/3600000), m = Math.floor((exp%3600000)/60000); list.innerHTML += `<div style="padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;"><div style="text-align:left"><b>${i.name}</b><br><span class="trash-countdown">🕒 ${d}H ${h}J ${m}M</span></div><button onclick="sysRestore('${i.id}')" style="background:var(--nota);color:white;padding:5px 10px;border-radius:5px;font-size:10px">Restore</button></div>`; }); } }
 function sysConfirmTrashEmpty() { uiConfirmAction("Hapus Permanen?", "Tab ini akan dikosongkan selamanya!", () => { storage = storage.filter(i => !(i.inTrash && i.type === curTrashTab)); dbSave(); uiTrashTab(curTrashTab); }, true); }
 
 function uiToggleSelection() { selMode = !selMode; selIds = []; document.getElementById('select-bar').classList.toggle('hidden', !selMode); const btn = document.getElementById('btn-pilih-toggle'); btn.innerText = selMode ? "Batal" : "Pilih"; btn.style.background = selMode ? "var(--danger)" : "var(--success)"; document.getElementById('txt-select-count').innerText = "0 Item"; navRenderGrid(); }
@@ -563,6 +584,8 @@ function toggleInput(type) {
     const inp = document.getElementById(type === 'note' ? 'inp-nota-note' : 'inp-resi');
     inp.classList.toggle('hidden', !chk.checked);
     if(chk.checked) inp.focus();
+
+    editStatus(false); // <--- TAMBAHKAN INI
 }
 
 function toggleDateSection() {
@@ -571,13 +594,21 @@ function toggleDateSection() {
     const d1 = document.getElementById('inp-d1');
     const d2 = document.getElementById('inp-d2');
 
+    editStatus(false); // <--- TAMBAHKAN INI (Agar tombol preview mati saat checkbox diklik)
+
     if (chk.checked) {
         wrap.classList.remove('hidden');
     } else {
         const hasD1 = d1 && d1.value; const hasD2 = d2 && d2.value;
         if(hasD1 || hasD2) {
             chk.checked = true; 
-            uiConfirmAction("Matikan Tanggal?", "Tanggal yang sudah diisi akan <b>DIHAPUS/RESET</b>.<br>Lanjutkan?", () => { document.getElementById('chk-show-date').checked = false; wrap.classList.add('hidden'); if(d1) d1.value = ""; if(d2) d2.value = ""; editSave(); }, true);
+            uiConfirmAction("Matikan Tanggal?", "Tanggal yang sudah diisi akan <b>DIHAPUS/RESET</b>.<br>Lanjutkan?", () => { 
+                document.getElementById('chk-show-date').checked = false; 
+                wrap.classList.add('hidden'); 
+                if(d1) d1.value = ""; 
+                if(d2) d2.value = ""; 
+                editSave(); 
+            }, true);
         } else { wrap.classList.add('hidden'); }
     }
 }
@@ -645,7 +676,27 @@ function editAddRow(d = {}) {
 }
 
 function disableEnter(e) { if(e.key === 'Enter') { e.preventDefault(); return false; } }
-function formatAndCalc(el) { checkInputLimit(el); let val = el.value.replace(/\D/g, ''); if (val !== "") { val = parseInt(val, 10).toLocaleString('id-ID'); el.value = val; } else { el.value = ""; } editCalc(); }
+
+function formatAndCalc(el) { 
+    checkInputLimit(el);
+    editStatus(false); // <--- TAMBAHKAN INI (Pastikan tombol mati saat mengetik)
+
+    let val = el.value.replace(/[^0-9,]/g, ''); 
+    if (val !== "") { 
+        if(el.classList.contains('col-harga')) {
+             let clean = val.replace(/\./g, '');
+             const parsed = parseInt(clean, 10);
+             if(!isNaN(parsed)) {
+                 val = parsed.toLocaleString('id-ID');
+             }
+        }
+        el.value = val; 
+    } else { 
+        el.value = ""; 
+    } 
+    editCalc(); 
+}
+
 function checkInputLimit(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; editStatus(false); }
 function renumberRows() { const rows = document.querySelectorAll('#comp-tbody tr'); rows.forEach((row, index) => { row.cells[0].innerText = index + 1; }); }
 
@@ -672,7 +723,12 @@ function editSave(silent = false) {
 }
 
 function editCalc() { 
-    let t = 0; document.querySelectorAll('#comp-tbody tr').forEach(tr => { const rawQ = tr.querySelector('.col-jml').value.replace(/\./g, ''); const rawP = tr.querySelector('.col-harga').value.replace(/\./g, ''); t += ((parseFloat(rawQ) || 0) * (parseFloat(rawP) || 0)); }); 
+    let t = 0; 
+    document.querySelectorAll('#comp-tbody tr').forEach(tr => { 
+        const rawQ = sysNum(tr.querySelector('.col-jml').value); 
+        const rawP = sysNum(tr.querySelector('.col-harga').value); 
+        t += (rawQ * rawP); 
+    }); 
     const n = storage.find(i=>i.id===activeId); let finalTotal = t;
     if (n && n.discVal && n.discVal > 0) {
         let discountAmount = (n.discType === 'p') ? t * (n.discVal / 100) : n.discVal;
@@ -687,7 +743,6 @@ function editStatus(s) { document.getElementById('btn-preview-trigger').disabled
 function uiNotify(msg, type='success') { const b = document.getElementById('comp-notify'); document.getElementById('notify-msg').innerText = msg; b.style.borderColor = type==='danger'?'var(--danger)':'var(--success)'; b.style.color = type==='danger'?'var(--danger)':'var(--success)'; b.classList.add('show'); setTimeout(() => b.classList.remove('show'), 2000); }
 function sysExport() { const a = document.createElement("a"); a.href=URL.createObjectURL(new Blob([JSON.stringify(storage)],{type:'application/json'})); a.download=`Backup.json`; a.click(); }
 
-/* --- SMART IMPORT --- */
 function sysImport(e) { 
     const file = e.target.files[0]; if(!file) return; 
     const reader = new FileReader(); 
@@ -703,6 +758,7 @@ function sysImport(e) {
             const processed = imported.map(i => { return { ...i, id: idMap[i.id], parentId: i.parentId ? (idMap[i.parentId] || importFolderId) : importFolderId }; });
             storage.push(rootFolder, ...processed); dbSave(); navRenderGrid(); uiNotify("Data Berhasil Diimpor!"); 
         } catch(err) { uiNotify("Gagal membaca file!", "danger"); } 
+        finally { e.target.value = ''; }
     }; 
     reader.readAsText(file); 
 }
@@ -714,7 +770,13 @@ function getFinalHTML() {
     const styles = `body { font-family: sans-serif; padding: 20px; } table { width: 100%; border-collapse: collapse; border: 2px solid black; font-size: 13px; } th, td { padding: 8px; border-right: 1px solid black; border-bottom: 1px solid black; } th:last-child, td:last-child { border-right: none; } thead th { border-bottom: 2px solid black; background: #eee; } .theme-modern .preview-header { background: #f1f5f9; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 20px; } .theme-modern h2 { margin: 0; color: #1e293b; } .theme-modern table { border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-radius: 12px; overflow: hidden; } .theme-modern th, .theme-modern td { border: none; border-bottom: 1px solid #f1f5f9 !important; border-right: 1px solid #e2e8f0 !important; padding: 12px !important; color: #475569; } .theme-modern th:last-child, .theme-modern td:last-child { border-right: none !important; } .theme-modern th { background: #f1f5f9; color: #334155; font-weight: 800; text-transform: uppercase; } .theme-modern .preview-total { color: #2563eb !important; text-shadow: none !important; } .theme-transparent { background: transparent; } .theme-transparent .preview-header { border-bottom: 4px solid black !important; padding-bottom: 10px; margin-bottom: 20px !important; text-align: center; } .theme-transparent table { border: none !important; } .theme-transparent th { border: none !important; border-bottom: 2px solid black !important; border-right: 1px dotted black !important; background: transparent !important; color: black !important; font-weight: 900; } .theme-transparent td { border: none !important; border-bottom: 1px dotted #999 !important; border-right: 1px dotted black !important; color: black !important; } .theme-transparent th:last-child, .theme-transparent td:last-child { border-right: none !important; } .theme-transparent .preview-total { text-decoration: underline; } .text-right { text-align: right; } .hidden { display: none; }`;
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>${styles}</style></head><body><div class="${document.getElementById('preview-print-area').className}">${paper.innerHTML}</div></body></html>`;
 }
-function sysDownloadHTMLAction() { const h = getFinalHTML(); if(!h) return; const n = storage.find(i=>i.id===activeId); const b = new Blob([h], {type: 'text/html'}); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `${n?n.name:'Nota'}.html`; a.click(); }
+
+function sysDownloadHTMLAction() { 
+    if(!document.getElementById('view-editor').classList.contains('hidden')) {
+        editSave(true); 
+    }
+    const h = getFinalHTML(); if(!h) return; const n = storage.find(i=>i.id===activeId); const b = new Blob([h], {type: 'text/html'}); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `${n?n.name:'Nota'}.html`; a.click(); 
+}
 function sysCopyHTML() { const h = getFinalHTML(); if(!h) return; navigator.clipboard.writeText(h).then(() => { uiNotify("Kode HTML Disalin!"); uiPopupClose(); }).catch(err => { uiNotify("Gagal menyalin!", "danger"); }); }
 
 function uiPreview(show, useStorage = false) {
@@ -722,8 +784,16 @@ function uiPreview(show, useStorage = false) {
     if(show) {
         if(!useStorage) history.pushState({view: 'preview'}, null, ""); 
         const paper = document.getElementById('preview-paper');
-        if(window.innerWidth < 500) { const scale = (window.innerWidth - 30) / 450; paper.style.transform = `scale(${scale})`; paper.style.marginTop = '10px'; } 
-        else { paper.style.transform = 'none'; paper.style.marginTop = '30px'; }
+        
+        const baseScale = (window.innerWidth < 500) ? ((window.innerWidth - 30) / 450) : 1;
+        const targetScale = baseScale * 0.8; 
+        paper.style.transform = `scale(${targetScale})`;
+        
+        if(window.innerWidth >= 500) {
+             paper.style.marginTop = '30px';
+        } else {
+             paper.style.marginTop = '10px';
+        }
 
         const n = storage.find(i=>i.id===activeId); let total = 0; let rows = ''; let headEx = (n.customCols || customCols).map(c => `<th>${c}</th>`).join('');
         const showNum = n.showNum; const headNum = showNum ? '<th style="padding:8px;border:1px solid black;text-align:center;width:30px;">No</th>' : '';
@@ -731,15 +801,15 @@ function uiPreview(show, useStorage = false) {
         if (useStorage) {
             if(n.items) {
                 n.items.forEach((item, idx) => {
-                    const q = parseFloat(item.jml) || 0; const p = parseFloat(item.harga) || 0; total += (q * p);
+                    const q = sysNum(item.jml); const p = sysNum(item.harga); total += (q * p);
                     let rowEx = ''; if(item.extras) item.extras.forEach(e => rowEx += `<td style="padding:8px;text-align:center">${e}</td>`);
                     const rowNum = showNum ? `<td style="padding:8px;text-align:center;border-right:1px solid black;border-bottom:1px solid black;">${idx + 1}</td>` : '';
-                    rows += `<tr>${rowNum}<td style="padding:8px">${item.barang.replace(/\n/g, "<br>")}</td><td style="padding:8px;text-align:center">${parseInt(item.jml).toLocaleString('id-ID').replace(/\n/g, "<br>")}</td><td style="padding:8px">${parseInt(item.harga).toLocaleString('id-ID').replace(/\n/g, "<br>")}</td>${rowEx}</tr>`;
+                    rows += `<tr>${rowNum}<td style="padding:8px">${item.barang.replace(/\n/g, "<br>")}</td><td style="padding:8px;text-align:center">${item.jml.replace(/\n/g, "<br>")}</td><td style="padding:8px">${item.harga.replace(/\n/g, "<br>")}</td>${rowEx}</tr>`;
                 });
             }
         } else {
             document.querySelectorAll('#comp-tbody tr').forEach((tr, idx) => {
-                const q = parseFloat(tr.querySelector('.col-jml').value.replace(/\./g, '')) || 0; const p = parseFloat(tr.querySelector('.col-harga').value.replace(/\./g, '')) || 0; total += (q*p);
+                const q = sysNum(tr.querySelector('.col-jml').value); const p = sysNum(tr.querySelector('.col-harga').value); total += (q*p);
                 let rowEx = ''; tr.querySelectorAll('.col-extra').forEach(inp => rowEx += `<td style="padding:8px;text-align:center">${inp.value}</td>`);
                 const rowNum = showNum ? `<td style="padding:8px;text-align:center;border-right:1px solid black;border-bottom:1px solid black;">${idx + 1}</td>` : '';
                 rows += `<tr>${rowNum}<td style="padding:8px">${tr.querySelector('.col-barang').value.replace(/\n/g, "<br>")}</td><td style="padding:8px;text-align:center">${tr.querySelector('.col-jml').value.replace(/\n/g, "<br>")}</td><td style="padding:8px">${tr.querySelector('.col-harga').value.replace(/\n/g, "<br>")}</td>${rowEx}</tr>`;
@@ -767,8 +837,22 @@ function uiPreview(show, useStorage = false) {
     } else { if(history.state && history.state.view === 'preview') history.back(); }
 }
 
+function sysDownloadImg() { 
+    const p = document.getElementById('preview-paper');
+    const oldTrans = p.style.transform;
+    p.style.transform = 'scale(1)'; 
+    p.style.width = '450px'; 
+
+    html2canvas(p, {scale:3}).then(c => { 
+        const a = document.createElement('a'); 
+        a.download=`Nota.png`; 
+        a.href=c.toDataURL(); 
+        a.click(); 
+        p.style.transform = oldTrans; 
+    }); 
+}
+
 function sysToggleFootnote() { isFootActive = !isFootActive; document.getElementById('btn-foot-toggle').innerText = isFootActive ? "Catatan: ON" : "Catatan: OFF"; uiPreview(true); }
-function sysDownloadImg() { html2canvas(document.getElementById('preview-paper'), {scale:3}).then(c => { const a = document.createElement('a'); a.download=`Nota.png`; a.href=c.toDataURL(); a.click(); }); }
 function sysEnterScreenshotMode() { document.body.classList.add('is-clean-mode'); history.pushState({view: 'clean'}, null, ""); uiNotify("Mode Screenshot: Tekan Kembali untuk keluar"); }
 function sysPrint() { window.print(); }
 
@@ -776,6 +860,8 @@ function sysPrint() { window.print(); }
 document.getElementById('layout-toggle').checked = (layoutMode === 'desktop');
 if(window.innerWidth <= 600 && layoutMode !== 'desktop') { document.body.classList.remove('is-desktop'); } else { sysToggleLayout(); }
 const savedParent = localStorage.getItem('notafolder_cur_parent'); const savedNote = localStorage.getItem('notafolder_active_id');
+sysSanitizeDB();
+sysAutoCleanup(); // NEW: RUN CLEANUP ON LOAD
 history.replaceState({view: 'folder', id: null}, null, "");
 if (savedNote) { if(savedParent) curParent = savedParent; history.pushState({view: 'folder', id: curParent}, null, ""); editOpen(savedNote); } 
 else if (savedParent) { navGo(savedParent); } else { navRenderGrid(); }
