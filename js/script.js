@@ -7,10 +7,24 @@ let viewMode = localStorage.getItem('notafolder_view_mode') || 'simple';
 let layoutMode = localStorage.getItem('notafolder_layout') || 'mobile';
 let resetTimer = null; 
 
+// --- VARS SORTING BARU ---
+let sortPrio = localStorage.getItem('notafolder_sort_prio') || 'folder'; // 'mix', 'folder', 'file'
+let sortOrder = localStorage.getItem('notafolder_sort_order') || 'created'; // 'created', 'edited', 'az'
+
 /* --- CORE FUNCTIONS --- */
 function dbSave() { localStorage.setItem(DB_KEY, JSON.stringify(storage)); localStorage.setItem(HIS_KEY, JSON.stringify(moveHis)); }
 
-// --- NEW: CLEANUP & SANITIZE ---
+// Fungsi Helper untuk Cek Circular Dependency (Mencegah Crash saat Move)
+function isDescendant(parentId, childId) {
+    if (!parentId || !childId) return false;
+    let curr = storage.find(i => i.id === childId);
+    while (curr && curr.parentId) {
+        if (curr.parentId === parentId) return true;
+        curr = storage.find(i => i.id === curr.parentId);
+    }
+    return false;
+}
+
 function sysSanitizeDB() {
     let changed = false;
     storage.forEach(item => {
@@ -83,11 +97,10 @@ function sysNum(val) {
 /* --- UI SYSTEM --- */
 function uiShowChangelog() {
     const logs = [
-        "<b>v121.11</b>: Auto Clean (2 Hari) & Ghost Fix.",
-        "<b>v121.9</b>: Stable Move & Zoom Fix.",
-        "<b>v121.8</b>: Fix Tombol Move & Layout Overlap.",
-        "<b>v121.7</b>: Fix Modern Title Wrap.",
-        "<b>v121.5</b>: Preview Background Transparan & Scale Down."
+        "<b>v121.15</b>: Icon Sort Baru & Header Klasik.",
+        "<b>v121.14</b>: Header Rapi & Fitur Sorting.",
+        "<b>v121.13</b>: Fix Nomor Urut Nota & Mobile Keyboard Padding.",
+        "<b>v121.12</b>: Fix Crash Move, Rename Case, & Kursor Input."
     ];
     uiPopupOpen('changelog', logs);
 }
@@ -218,6 +231,7 @@ function sysQuickPreview(id) {
     activeId = id; history.pushState({view: 'preview', id: id}, null, ""); uiPreview(true, true); 
 }
 
+// --- FUNGSI UTAMA RENDER DENGAN SORTING ---
 function navRenderGrid() {
     document.body.classList.remove('mode-editor');
     document.getElementById('view-editor').classList.add('hidden'); 
@@ -231,7 +245,34 @@ function navRenderGrid() {
     document.getElementById('vm-details').classList.toggle('active', viewMode === 'details');
     grid.className = viewMode === 'simple' ? 'grid' : 'list-container';
     
+    // Ambil item
     const items = storage.filter(i => i.parentId === curParent && !i.inTrash);
+    
+    // --- LOGIKA SORTING DISINI ---
+    items.sort((a, b) => {
+        // 1. Sort by Priority Type (Folder vs File)
+        if (sortPrio === 'folder') {
+            if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+        } else if (sortPrio === 'file') {
+            if (a.type !== b.type) return a.type === 'nota' ? -1 : 1;
+        }
+        // If sortPrio is 'mix', we skip type sorting and go straight to order
+
+        // 2. Sort by Order Criteria
+        let val = 0;
+        if (sortOrder === 'az') {
+            val = a.name.localeCompare(b.name);
+        } else if (sortOrder === 'created') {
+            // Newest Created First
+            val = new Date(b.createdAt) - new Date(a.createdAt);
+        } else if (sortOrder === 'edited') {
+            // Newest Edited First
+            val = new Date(b.lastEdited) - new Date(a.lastEdited);
+        }
+        return val;
+    });
+    // -----------------------------
+
     if(selMode) { const isAll = items.length > 0 && items.every(i => selIds.includes(i.id)); document.getElementById('cb-select-all').checked = isAll; }
     
     if(items.length === 0) { grid.innerHTML = '<div style="text-align:center; color:gray; padding:20px; grid-column:span 8;">Folder Kosong</div>'; return; }
@@ -272,6 +313,21 @@ function navRenderGrid() {
             grid.appendChild(row);
         }
     });
+}
+
+// --- FUNGSI UPDATE SORTING ---
+function sysSortChange(type, val) {
+    if(type === 'p') {
+        sortPrio = val;
+        localStorage.setItem('notafolder_sort_prio', sortPrio);
+    } else {
+        sortOrder = val;
+        localStorage.setItem('notafolder_sort_order', sortOrder);
+    }
+    // Update tombol aktif di popup
+    uiPopupOpen('sort'); 
+    // Re-render grid di background
+    navRenderGrid();
 }
 
 function sysSearch(k) { 
@@ -324,7 +380,19 @@ function navGo(id) {
     }
 }
 
-function navBack(isHardware = false) { 
+function navBack(isHardware = false, force = false) { 
+    if(!force && document.body.classList.contains('mode-editor')) {
+        const statusText = document.getElementById('txt-save-status').innerText;
+        if(!statusText.includes("Siap Cetak")) {
+            uiConfirmAction(
+                "Data Belum Disimpan!", 
+                "Perubahan yang Anda buat akan <b>HILANG</b> jika keluar sekarang.<br><br>Tetap ingin keluar?", 
+                () => { navBack(isHardware, true); }, 
+                true 
+            );
+            return;
+        }
+    }
     if(!isHardware) {
         if(activeId) {
             const n = storage.find(i => i.id === activeId);
@@ -404,6 +472,8 @@ function uiPopupReset() {
     document.getElementById('popup-disc-wrapper').classList.add('hidden'); 
     document.getElementById('popup-select').classList.add('hidden'); 
     document.getElementById('btn-popup-extra').classList.add('hidden');
+    document.getElementById('popup-sort-wrapper').classList.add('hidden'); // RESET SORT WRAPPER
+    
     if(resetTimer) { clearInterval(resetTimer); resetTimer = null; }
     const btn = document.getElementById('btn-popup-confirm');
     const bc = document.getElementById('btn-popup-cancel');
@@ -430,6 +500,7 @@ function uiConfirmAction(t, d, o, s) {
 function uiPopupOpen(type, extra = null) {
     uiPopupReset(); 
     const o = document.getElementById('comp-popup'); const input = document.getElementById('popup-input'); const wrap = document.getElementById('popup-input-wrapper'); const btn = document.getElementById('btn-popup-confirm'); const icon = document.getElementById('popup-icon'); const title = document.getElementById('popup-title'); const sel = document.getElementById('popup-select'); const optWrap = document.getElementById('popup-opt-wrapper'); const chkOpen = document.getElementById('popup-chk-open'); const desc = document.getElementById('popup-desc'); const calcArea = document.getElementById('popup-content-calc'); const bc = document.getElementById('btn-popup-cancel'); const discWrap = document.getElementById('popup-disc-wrapper'); const extraBtn = document.getElementById('btn-popup-extra'); 
+    const sortWrap = document.getElementById('popup-sort-wrapper');
 
     o.classList.remove('hidden');
     btn.style.background = "var(--nota)"; btn.innerText = "Simpan"; btn.disabled = false;
@@ -484,8 +555,18 @@ function uiPopupOpen(type, extra = null) {
         input.value = item.name; btn.innerText = "Update"; btn.style.background = "var(--success)"; 
         btn.onclick = () => { 
             if(input.value.trim()){ 
-                if (input.value.trim().toLowerCase() !== item.name.toLowerCase()) { item.name = getUniqueName(input.value.trim(), item.parentId, item.type); }
-                dbSave(); uiPopupClose(); navRenderGrid(); if(activeId) sysUpdateBreadcrumbs(); uiNotify("Nama diubah!"); 
+                const newName = input.value.trim();
+                // FIX: Logika Case Sensitive Rename
+                if (newName !== item.name) {
+                    if (newName.toLowerCase() !== item.name.toLowerCase()) {
+                         item.name = getUniqueName(newName, item.parentId, item.type); 
+                    } else {
+                         item.name = newName; // Izinkan ganti casing saja
+                    }
+                    dbSave(); uiPopupClose(); navRenderGrid(); if(activeId) sysUpdateBreadcrumbs(); uiNotify("Nama diubah!"); 
+                } else {
+                    uiPopupClose();
+                }
             } 
         }; 
     }
@@ -494,7 +575,13 @@ function uiPopupOpen(type, extra = null) {
         icon.innerText = '🚚'; title.innerText = "Pindahkan Item"; 
         desc.innerText = "Pilih Folder Tujuan:"; desc.classList.remove('hidden'); wrap.classList.remove('hidden'); input.classList.add('hidden'); sel.classList.remove('hidden'); 
         
-        const validDestinations = storage.filter(f => !f.inTrash && f.type === 'folder' && !selIds.includes(f.id)); 
+        // FIX: Tambahkan isDescendant check agar tidak loop
+        const validDestinations = storage.filter(f => 
+            !f.inTrash && 
+            f.type === 'folder' && 
+            !selIds.includes(f.id) && 
+            !selIds.some(selId => isDescendant(selId, f.id))
+        ); 
 
         sel.innerHTML = '<option value="">-- Pilih Folder --</option><option value="HOME">🏠 BERANDA</option>'; 
         validDestinations.sort((a,b)=>a.name.localeCompare(b.name)).forEach(f => { sel.innerHTML += `<option value="${f.id}">📁 ${f.name}</option>`; }); 
@@ -519,8 +606,19 @@ function uiPopupOpen(type, extra = null) {
         desc.innerHTML = extra.map(l => `<div style="border-bottom:1px solid #eee; padding:8px 0;">${l}</div>`).join(''); 
         btn.innerText = "Tutup"; btn.onclick = () => uiPopupClose(); bc.classList.add('hidden'); 
     }
+    // --- POPUP SORT ---
+    else if(type === 'sort') {
+        icon.innerText = '🔃'; title.innerText = "Urutkan File";
+        sortWrap.classList.remove('hidden');
+        btn.innerText = "Tutup"; btn.onclick = () => uiPopupClose(); bc.classList.add('hidden');
+
+        // Update active class
+        document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('s-p-'+sortPrio).classList.add('active');
+        document.getElementById('s-o-'+sortOrder).classList.add('active');
+    }
     
-    if(!['calc', 'changelog', 'move', 'discount', 'html_export'].includes(type)) input.focus();
+    if(!['calc', 'changelog', 'move', 'discount', 'html_export', 'sort'].includes(type)) input.focus();
 }
 
 function uiPopupClose() { document.getElementById('comp-popup').classList.add('hidden'); }
@@ -593,19 +691,16 @@ function uiTrashTab(t) {
         filterBar.classList.add('hidden'); 
         const now = new Date(); 
         
-        // --- BAGIAN INI YANG DIUBAH ---
         storage.filter(i => i.inTrash && i.type === t)
-               .sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt)) // <--- FIX: URUTKAN DARI YG BARU DIHAPUS
+               .sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt))
                .forEach(i => { 
-                   // Hitung sisa waktu
                    const delTime = new Date(i.deletedAt).getTime();
-                   const exp = (delTime + (2 * 24 * 60 * 60 * 1000)) - now; // 2 Hari (Sesuai request v121.11)
+                   const exp = (delTime + (2 * 24 * 60 * 60 * 1000)) - now;
                    
                    const d = Math.floor(exp/86400000);
                    const h = Math.floor((exp%86400000)/3600000);
                    const m = Math.floor((exp%3600000)/60000); 
                    
-                   // Tampilan Item Sampah
                    list.innerHTML += `
                    <div style="padding:10px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;">
                        <div style="text-align:left">
@@ -629,7 +724,7 @@ function toggleInput(type) {
     inp.classList.toggle('hidden', !chk.checked);
     if(chk.checked) inp.focus();
 
-    editStatus(false); // <--- TAMBAHKAN INI
+    editStatus(false);
 }
 
 function toggleDateSection() {
@@ -638,7 +733,7 @@ function toggleDateSection() {
     const d1 = document.getElementById('inp-d1');
     const d2 = document.getElementById('inp-d2');
 
-    editStatus(false); // <--- TAMBAHKAN INI (Agar tombol preview mati saat checkbox diklik)
+    editStatus(false);
 
     if (chk.checked) {
         wrap.classList.remove('hidden');
@@ -712,36 +807,43 @@ function editAddCol() { uiPopupOpen('col'); }
 function editAddColAction(name) { editSave(true); customCols.push(name); const nota = storage.find(x => x.id === activeId); if(nota.items) { nota.items.forEach(row => { if(!row.extras) row.extras = []; row.extras.push(""); }); } nota.customCols = customCols; dbSave(); editOpen(activeId); }
 function editRemCol(i) { const colName = customCols[i]; uiConfirmAction("Hapus Variasi?", `"${colName}" akan dihapus.`, () => { editSave(true); customCols.splice(i, 1); const nota = storage.find(x => x.id === activeId); if(nota.items) { nota.items.forEach(row => { if(row.extras) row.extras.splice(i, 1); }); } nota.customCols = customCols; dbSave(); editOpen(activeId); uiNotify("Variasi dihapus"); }, true); }
 
+// --- NEW INPUT LOGIC TO PREVENT CURSOR JUMPING ---
+function unformatInput(el) {
+    let val = el.value.replace(/\./g, '');
+    if(val === '0') val = '';
+    el.value = val;
+}
+
+function formatInput(el) {
+    let val = el.value.replace(/[^0-9]/g, '');
+    if(val) {
+        el.value = parseInt(val).toLocaleString('id-ID');
+    }
+    checkInputLimit(el);
+    editCalc();
+}
+// --------------------------------------------------
+
 function editAddRow(d = {}) { 
     const tr = document.createElement('tr'); const index = document.getElementById('comp-tbody').children.length + 1;
     let ex = ''; customCols.forEach((c, i) => ex += `<td><textarea class="edit-inp col-extra" rows="1" oninput="checkInputLimit(this)">${(d.extras&&d.extras[i])?d.extras[i]:''}</textarea></td>`); 
-    tr.innerHTML = `<td style="text-align:center; font-size:12px; color:#64748b; font-weight:bold; vertical-align:middle;">${index}</td><td><textarea class="edit-inp col-barang" rows="1" oninput="checkInputLimit(this)">${d.barang||''}</textarea></td><td><textarea class="edit-inp col-jml" rows="1" onkeydown="return disableEnter(event)" oninput="formatAndCalc(this)">${d.jml!==undefined?d.jml:''}</textarea></td><td><textarea class="edit-inp col-harga" rows="1" onkeydown="return disableEnter(event)" oninput="formatAndCalc(this)">${d.harga!==undefined?d.harga:''}</textarea></td>${ex}<td style="text-align:center;"><input type="checkbox" class="row-chk"></td>`; 
+    
+    // Updated HTML String with new Focus/Blur logic
+    tr.innerHTML = `<td style="text-align:center; font-size:12px; color:#64748b; font-weight:bold; vertical-align:middle;">${index}</td>
+    <td><textarea class="edit-inp col-barang" rows="1" oninput="checkInputLimit(this); editStatus(false)">${d.barang||''}</textarea></td>
+    <td><textarea class="edit-inp col-jml" rows="1" onkeydown="return disableEnter(event)" onfocus="unformatInput(this)" onblur="formatInput(this)" oninput="editCalc(); editStatus(false); checkInputLimit(this)">${d.jml!==undefined?d.jml:''}</textarea></td>
+    <td><textarea class="edit-inp col-harga" rows="1" onkeydown="return disableEnter(event)" onfocus="unformatInput(this)" onblur="formatInput(this)" oninput="editCalc(); editStatus(false); checkInputLimit(this)">${d.harga!==undefined?d.harga:''}</textarea></td>${ex}
+    <td style="text-align:center;"><input type="checkbox" class="row-chk"></td>`; 
+    
     document.getElementById('comp-tbody').appendChild(tr); 
+    
+    // FIX: Re-numbering saat tambah baris agar nomor tidak loncat
+    renumberRows();
 }
 
 function disableEnter(e) { if(e.key === 'Enter') { e.preventDefault(); return false; } }
 
-function formatAndCalc(el) { 
-    checkInputLimit(el);
-    editStatus(false); // <--- TAMBAHKAN INI (Pastikan tombol mati saat mengetik)
-
-    let val = el.value.replace(/[^0-9,]/g, ''); 
-    if (val !== "") { 
-        if(el.classList.contains('col-harga')) {
-             let clean = val.replace(/\./g, '');
-             const parsed = parseInt(clean, 10);
-             if(!isNaN(parsed)) {
-                 val = parsed.toLocaleString('id-ID');
-             }
-        }
-        el.value = val; 
-    } else { 
-        el.value = ""; 
-    } 
-    editCalc(); 
-}
-
-function checkInputLimit(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; editStatus(false); }
+function checkInputLimit(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
 function renumberRows() { const rows = document.querySelectorAll('#comp-tbody tr'); rows.forEach((row, index) => { row.cells[0].innerText = index + 1; }); }
 
 function editDeleteSelectedRows() { 
@@ -905,7 +1007,7 @@ document.getElementById('layout-toggle').checked = (layoutMode === 'desktop');
 if(window.innerWidth <= 600 && layoutMode !== 'desktop') { document.body.classList.remove('is-desktop'); } else { sysToggleLayout(); }
 const savedParent = localStorage.getItem('notafolder_cur_parent'); const savedNote = localStorage.getItem('notafolder_active_id');
 sysSanitizeDB();
-sysAutoCleanup(); // NEW: RUN CLEANUP ON LOAD
+sysAutoCleanup(); 
 history.replaceState({view: 'folder', id: null}, null, "");
 if (savedNote) { if(savedParent) curParent = savedParent; history.pushState({view: 'folder', id: curParent}, null, ""); editOpen(savedNote); } 
 else if (savedParent) { navGo(savedParent); } else { navRenderGrid(); }
