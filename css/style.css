@@ -7,7 +7,7 @@
 
 body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px 10px 110px 10px; transition: 0.3s; }
 
-/* CONTAINE */
+/* CONTAINER */
 .container { 
     max-width: 750px; margin: auto; background: white; padding: 20px; border-radius: 16px; min-height: 90vh; box-shadow: 0 4px 20px rgba(0,0,0,0.05); position: relative; z-index: 1; transition: 0.3s; 
 }
