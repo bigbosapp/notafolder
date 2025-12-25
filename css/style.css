@@ -283,3 +283,26 @@ button:active, .view-btn:active, .nav-arrow:active, .card:active, .list-item:act
     flex: 1; padding: 12px; border-radius: 10px; 
     border: none; font-weight: bold; font-size: 13px; cursor: pointer; 
 }
+
+/* --- FITUR PASSWORD --- */
+.pass-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+#btn-eye {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 16px;
+    color: #94a3b8;
+    user-select: none;
+    background: transparent;
+}
+
+#btn-eye:hover {
+    color: var(--nota);
+}
