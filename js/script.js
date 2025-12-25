@@ -1,6 +1,6 @@
 /* =========================================
-   NOTA FOLDER v121.29 - FIX POPUP JS
-   Fitur: Popup Lupa Password + Wajib Verifikasi
+   NOTA FOLDER v121.30 - EMAIL CHECK FIX
+   Fitur: Cek Email Terdaftar saat Reset Password
    ========================================= */
 
 // 1. IMPORT FIREBASE
@@ -66,7 +66,7 @@ function getFriendlyError(error) {
 
     switch (error.code) {
         case 'auth/invalid-email': return "Format email salah (contoh: nama@gmail.com).";
-        case 'auth/user-not-found': return "Akun tidak ditemukan. Daftar dulu ya.";
+        case 'auth/user-not-found': return "Email tidak terdaftar.";
         case 'auth/wrong-password': return "Kata sandi salah. Coba ingat-ingat lagi.";
         case 'auth/email-already-in-use': return "Email ini sudah terdaftar. Silakan Login.";
         case 'auth/weak-password': return "Kata sandi terlalu lemah (minimal 6 huruf).";
@@ -110,7 +110,7 @@ window.sysTogglePass = function() {
     }
 }
 
-// 2. LUPA PASSWORD (LOGIC POPUP) - BARU!
+// 2. LUPA PASSWORD (LOGIC POPUP) - UPDATE ERROR HANDLER
 window.sysSubmitForgotPass = async function() {
     const emailInput = document.getElementById('inp-forgot-email');
     const email = emailInput.value;
@@ -126,10 +126,8 @@ window.sysSubmitForgotPass = async function() {
     try {
         await sendPasswordResetEmail(auth, email);
         
-        // Tutup Popup
+        // JIKA SUKSES: Tutup Popup Forgot & Tampilkan Pesan Sukses
         document.getElementById('popup-forgot').classList.add('hidden');
-        
-        // Tampilkan Sukses di Layar Login
         uiConfirmAction(
             "Link Terkirim!", 
             `Link reset password telah dikirim ke: <b>${email}</b><br><br>Cek Inbox atau Spam email Anda sekarang.`, 
@@ -138,8 +136,18 @@ window.sysSubmitForgotPass = async function() {
         uiShowAuthMsg("Link reset password berhasil dikirim!", false);
         
     } catch (error) {
-        // Jika error (misal email ga ketemu)
-        alert("Gagal: " + getFriendlyError(error));
+        // JIKA GAGAL: Tampilkan Popup Error (Tanpa menutup form email agar bisa dikoreksi)
+        console.log("Reset Error:", error.code);
+        
+        if (error.code === 'auth/user-not-found') {
+            uiConfirmAction(
+                "Email Salah!", 
+                "Alamat email <b>" + email + "</b> tidak ditemukan atau belum terdaftar.<br>Silakan periksa ejaan atau daftar akun baru.", 
+                () => {}, true, "Coba Lagi"
+            );
+        } else {
+            uiConfirmAction("Gagal", getFriendlyError(error), () => {}, true, "Tutup");
+        }
     }
 }
 
@@ -165,7 +173,7 @@ window.sysAuthLogin = async function() {
     catch (error) { uiShowAuthMsg(getFriendlyError(error)); }
 }
 
-// 5. DAFTAR (REGISTRASI) - UPDATE GATEKEEPER
+// 5. DAFTAR (REGISTRASI)
 window.sysAuthRegister = async function() {
     const e = document.getElementById('auth-email').value;
     const p = document.getElementById('auth-pass').value;
@@ -201,27 +209,23 @@ onAuthStateChanged(auth, async (user) => {
     const loginOverlay = document.getElementById('view-login');
     
     if (user) {
-        // CEK 1: APAKAH EMAIL SUDAH DIVERIFIKASI?
-        // (Google Login otomatis verified, jadi aman)
+        // CEK VERIFIKASI EMAIL
         if (!user.emailVerified) {
             console.log("Akses Ditolak: Email belum verified.");
             
-            // Tampilkan pesan error TEGAS di layar login
             uiShowAuthMsg("⛔ Email belum diverifikasi! Cek Inbox/Spam dan klik linknya.", true);
             
-            // Tampilkan Popup juga biar makin sadar
             uiConfirmAction(
                 "Akses Ditolak", 
                 "Email Anda belum terverifikasi.<br>Silakan cek email (Inbox/Spam) dan klik link aktivasi yang kami kirim.",
                 () => {}, true, "Tutup"
             );
 
-            // Paksa Keluar (Logout)
             await signOut(auth);
-            return; // Berhenti di sini
+            return; 
         }
 
-        // JIKA LOLOS (Email Verified):
+        // JIKA LOLOS:
         currentUser = user;
         loginOverlay.classList.add('hidden'); 
         uiNotify(`Selamat datang, ${user.displayName || 'User'}!`);
@@ -241,7 +245,6 @@ onAuthStateChanged(auth, async (user) => {
             };
         }
     } else {
-        // KONDISI LOGOUT
         currentUser = null; storage = []; moveHis = [];
         loginOverlay.classList.remove('hidden'); 
     }
@@ -447,7 +450,7 @@ window.sysToggleSelectAll = function(isChecked) {
 }
 
 window.uiShowChangelog = function() {
-    const logs = ["<b>v121.29 (Fix Popup)</b>: Popup Lupa Password.", "<b>v121.27 (Gatekeeper)</b>: Wajib Verifikasi Email."];
+    const logs = ["<b>v121.30 (Final)</b>: Deteksi Email Tidak Terdaftar (Wajib Setting Console).", "<b>v121.29 (Popup)</b>: Popup Reset Password."];
     uiPopupOpen('changelog', logs);
 }
 
