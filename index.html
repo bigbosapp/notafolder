@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nota Folder v121.16 - Sort Fix</title>
+    <title>Nota Folder v121.16 - Fix Update</title>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -68,9 +68,36 @@
     </div>
 </div>
 
+<div id="view-login" class="login-overlay hidden">
+    <div class="login-box">
+        <div style="font-size: 60px; margin-bottom: 10px;">🔐</div>
+        <h2 style="margin: 0; color: var(--text);">Nota Folder</h2>
+        <p style="color:#64748b; font-size:13px; margin-top:5px; margin-bottom:25px;">Simpan data nota Anda secara Online.</p>
+        
+        <button onclick="sysAuthGoogle()" class="btn-google">
+            <span style="font-size:16px; margin-right:10px;">🇬</span> Masuk dengan Google
+        </button>
+        
+        <div style="display:flex; align-items:center; margin: 20px 0; color:#cbd5e1;">
+            <div style="height:1px; background:#e2e8f0; flex:1;"></div>
+            <div style="font-size:10px; padding:0 10px;">ATAU EMAIL</div>
+            <div style="height:1px; background:#e2e8f0; flex:1;"></div>
+        </div>
+
+        <input type="email" id="auth-email" placeholder="Alamat Email..." class="login-inp">
+        <input type="password" id="auth-pass" placeholder="Kata Sandi..." class="login-inp">
+        
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button onclick="sysAuthRegister()" class="btn-login-act" style="background:#fff; color:var(--text); border:1px solid #cbd5e1;">Daftar</button>
+            <button onclick="sysAuthLogin()" class="btn-login-act" style="background:var(--nota); color:white; flex:1.5;">Masuk</button>
+        </div>
+        <p id="auth-msg" style="font-size:11px; color:var(--danger); margin-top:15px; min-height:15px;"></p>
+    </div>
+</div>
+
 <div class="container">
     <div class="header-row">
-        <div class="version-tag" onclick="uiShowChangelog()">Nota Folder v121.16</div>
+        <div class="version-tag" onclick="uiShowChangelog()">Nota Folder v121.16 (Fix Update)</div>
     </div>
     
     <div class="view-mode-bar">
@@ -102,7 +129,6 @@
 
         <div class="action-bar">
             <button class="btn-sort-icon" onclick="uiPopupOpen('sort')">⇅</button>
-            
             <button class="btn-f" onclick="uiPopupOpen('folder')">+ Folder</button>
             <button class="btn-n" onclick="uiPopupOpen('nota')">+ Nota</button>
             <button id="btn-pilih-toggle" onclick="uiToggleSelection()">Pilih</button>
@@ -227,6 +253,6 @@
     <div id="preview-paper"><div id="preview-content"></div></div>
 </div>
 
-<script src="js/script.js"></script>
+<script type="module" src="js/script.js"></script>
 </body>
 </html>
