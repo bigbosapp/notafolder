@@ -1,6 +1,6 @@
 /* =========================================
-   NOTA FOLDER v121.21 - PRO ERROR MESSAGE
-   Integrasi Cloud + Custom Error Handler
+   NOTA FOLDER v121.23 - SECURITY UPDATE
+   Fitur: Show Pass, Reset Pass, Verify Email
    ========================================= */
 
 // 1. IMPORT FIREBASE
@@ -12,7 +12,9 @@ import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     signOut,
-    onAuthStateChanged 
+    onAuthStateChanged,
+    sendPasswordResetEmail,   // <--- BARU: Reset Password
+    sendEmailVerification     // <--- BARU: Verifikasi Email
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { 
     getFirestore, 
@@ -53,67 +55,110 @@ let sortOrder = localStorage.getItem('notafolder_sort_order') || 'created';
 let resetTimer = null;
 
 /* =========================================
-   BAGIAN HELPER (PENERJEMAH ERROR)
+   BAGIAN HELPER (MODERN ERROR POPUP)
    ========================================= */
 
-function getFriendlyError(error) {
-    console.log("Error Code:", error.code); // Untuk debugging developer
-    switch (error.code) {
-        case 'auth/invalid-email':
-            return "Format email tidak valid.";
-        case 'auth/user-not-found':
-            return "Akun tidak ditemukan. Silakan daftar dulu.";
-        case 'auth/wrong-password':
-            return "Kata sandi salah.";
-        case 'auth/email-already-in-use':
-            return "Email ini sudah terdaftar.";
-        case 'auth/weak-password':
-            return "Kata sandi terlalu lemah (min. 6 karakter).";
-        case 'auth/popup-closed-by-user':
-            return "Login dibatalkan.";
-        case 'auth/network-request-failed':
-            return "Gagal terhubung. Cek koneksi internet.";
-        case 'auth/too-many-requests':
-            return "Terlalu banyak percobaan. Tunggu sebentar.";
-        case 'auth/invalid-credential':
-            return "Kombinasi Email/Password salah.";
-        default:
-            // Jika error tidak dikenal, tampilkan pesan aslinya tapi lebih rapi
-            return "Terjadi kesalahan sistem. (" + error.code + ")";
+function uiShowError(title, errorObj) {
+    let msg = "Terjadi kesalahan tidak dikenal.";
+    
+    if (typeof errorObj === 'string') {
+        msg = errorObj;
+    } 
+    else if (errorObj && errorObj.code) {
+        console.log("Error Code:", errorObj.code);
+        switch (errorObj.code) {
+            case 'auth/invalid-email': msg = "Format alamat email tidak valid.<br>Contoh: nama@gmail.com"; break;
+            case 'auth/user-not-found': msg = "Akun tidak ditemukan.<br>Silakan periksa email atau daftar baru."; break;
+            case 'auth/wrong-password': msg = "Kata sandi salah.<br>Silakan coba lagi."; break;
+            case 'auth/email-already-in-use': msg = "Email ini sudah terdaftar.<br>Silakan langsung Login."; break;
+            case 'auth/weak-password': msg = "Kata sandi terlalu lemah.<br>Gunakan minimal 6 karakter."; break;
+            case 'auth/popup-closed-by-user': msg = "Proses Login dibatalkan."; break;
+            case 'auth/network-request-failed': msg = "Gagal terhubung ke server.<br>Periksa koneksi internet Anda."; break;
+            case 'auth/too-many-requests': msg = "Terlalu banyak percobaan gagal.<br>Tunggu beberapa saat lagi."; break;
+            case 'auth/invalid-credential': msg = "Kombinasi Email atau Password salah."; break;
+            case 'auth/operation-not-allowed': msg = "Metode login ini belum diaktifkan di server."; break;
+            default: msg = "Sistem Error: " + errorObj.code; break;
+        }
+    } else if (errorObj && errorObj.message) {
+        msg = errorObj.message;
     }
+    uiConfirmAction(title, msg, () => {}, true, "Tutup");
 }
 
 /* =========================================
-   BAGIAN AUTHENTICATION
+   BAGIAN AUTHENTICATION & SECURITY
    ========================================= */
+
+// FITUR 1: LIHAT PASSWORD (MATA)
+window.sysTogglePass = function() {
+    const inp = document.getElementById('auth-pass');
+    const icon = document.getElementById('btn-eye');
+    if(inp.type === 'password') {
+        inp.type = 'text';
+        icon.innerText = '🔒'; // Ikon gembok terbuka/tutup
+    } else {
+        inp.type = 'password';
+        icon.innerText = '👁️';
+    }
+}
+
+// FITUR 2: LUPA PASSWORD (RESET)
+window.sysForgotPass = async function() {
+    const e = document.getElementById('auth-email').value;
+    if(!e) return uiShowError("Email Kosong", "Masukkan alamat email Anda terlebih dahulu di kolom Email.");
+    
+    uiConfirmAction("Reset Kata Sandi?", `Link untuk mengubah kata sandi akan dikirim ke: <b>${e}</b>`, async () => {
+        try {
+            await sendPasswordResetEmail(auth, e);
+            uiNotify("Email Reset Terkirim! Cek Inbox/Spam.");
+        } catch (error) {
+            uiShowError("Gagal Kirim Email", error);
+        }
+    }, false, "Kirim Link");
+}
 
 window.sysAuthGoogle = async function() {
     const provider = new GoogleAuthProvider();
     try { await signInWithPopup(auth, provider); } 
-    catch (error) { document.getElementById('auth-msg').innerText = getFriendlyError(error); }
+    catch (error) { uiShowError("Gagal Masuk Google", error); }
 }
 
 window.sysAuthLogin = async function() {
     const e = document.getElementById('auth-email').value;
     const p = document.getElementById('auth-pass').value;
-    if(!e || !p) return document.getElementById('auth-msg').innerText = "Mohon isi email & kata sandi.";
+    if(!e || !p) return uiShowError("Data Belum Lengkap", "Mohon isi Email dan Kata Sandi.");
+    
     try { await signInWithEmailAndPassword(auth, e, p); } 
-    catch (error) { document.getElementById('auth-msg').innerText = getFriendlyError(error); }
+    catch (error) { uiShowError("Gagal Masuk", error); }
 }
 
+// FITUR 3: DAFTAR & VERIFIKASI EMAIL
 window.sysAuthRegister = async function() {
     const e = document.getElementById('auth-email').value;
     const p = document.getElementById('auth-pass').value;
-    if(!e || !p) return document.getElementById('auth-msg').innerText = "Mohon isi email & kata sandi.";
+    if(!e || !p) return uiShowError("Data Belum Lengkap", "Mohon isi Email dan Kata Sandi.");
+    
     try {
-        await createUserWithEmailAndPassword(auth, e, p);
-        uiNotify("Akun berhasil dibuat! Selamat datang.");
+        const userCredential = await createUserWithEmailAndPassword(auth, e, p);
+        const user = userCredential.user;
+        
+        // Kirim Email Verifikasi
+        await sendEmailVerification(user);
+        
+        uiConfirmAction(
+            "Akun Berhasil Dibuat!", 
+            "Kami telah mengirimkan link verifikasi ke email Anda.<br>Silakan cek email agar akun lebih aman.", 
+            () => {}, 
+            false, 
+            "Oke, Saya Cek"
+        );
+        
     } catch (error) {
-        document.getElementById('auth-msg').innerText = getFriendlyError(error);
+        uiShowError("Gagal Daftar", error);
     }
 }
 
-// LISTENER AUTH (PROFIL & LOGOUT)
+// LISTENER AUTH
 onAuthStateChanged(auth, async (user) => {
     const loginOverlay = document.getElementById('view-login');
     if (user) {
@@ -124,7 +169,6 @@ onAuthStateChanged(auth, async (user) => {
         await loadDataFromCloud();
         setTimeout(sysCheckLocalData, 1000); 
 
-        // TAMPILAN TOMBOL PROFIL
         const btnReset = document.querySelector('.view-mode-bar .view-btn[style*="var(--danger)"]');
         if(btnReset) {
             let displayName = user.email.split('@')[0];
@@ -151,7 +195,7 @@ onAuthStateChanged(auth, async (user) => {
     } else {
         currentUser = null; storage = []; moveHis = [];
         loginOverlay.classList.remove('hidden'); 
-        document.getElementById('auth-msg').innerText = ""; // Bersihkan pesan error lama
+        document.getElementById('auth-msg').innerText = ""; 
     }
 });
 
@@ -174,7 +218,8 @@ async function loadDataFromCloud() {
         }
         navRenderGrid(); uiNotify("Data Cloud Siap!");
     } catch (e) {
-        console.error(e); uiNotify("Gagal memuat: " + e.message, "danger");
+        console.error(e); 
+        uiNotify("Gagal memuat data server.", "danger");
     }
 }
 
@@ -354,7 +399,7 @@ window.sysToggleSelectAll = function(isChecked) {
 }
 
 window.uiShowChangelog = function() {
-    const logs = ["<b>v121.21 (Pro)</b>: Pesan Error Bahasa Indonesia yang lebih ramah.", "<b>v121.20 (UI)</b>: Update Tampilan Profil User."];
+    const logs = ["<b>v121.23 (Security)</b>: Tambah tombol mata di password, reset password, & verifikasi email.", "<b>v121.22 (Popup)</b>: Pesan error modern."];
     uiPopupOpen('changelog', logs);
 }
 
