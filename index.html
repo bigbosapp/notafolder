@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nota Folder v121.29 - Fix Reset Popup</title>
+    <title>Nota Folder v121.34 - Email Only</title>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
 </head>
 <body>
 
@@ -20,10 +22,8 @@
         <p style="color:#64748b; font-size:12px; margin-bottom:15px; line-height:1.5;">
             Masukkan alamat email akun Anda.<br>Kami akan mengirimkan link untuk membuat kata sandi baru.
         </p>
-        
         <input type="email" id="inp-forgot-email" placeholder="Contoh: nama@email.com" 
                style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:10px; margin-bottom:20px; outline:none; box-sizing: border-box;">
-        
         <div style="display:flex; gap:10px;">
             <button onclick="document.getElementById('popup-forgot').classList.add('hidden')" 
                     style="background:#f1f5f9; color:#64748b; flex:1; font-weight:bold; border:none; padding:12px; border-radius:10px; cursor:pointer;">Batal</button>
@@ -37,15 +37,12 @@
     <div class="popup-box">
         <div id="popup-icon" style="font-size: 40px; margin-bottom: 10px;">📁</div>
         <h3 id="popup-title">Judul</h3>
-        
         <div id="popup-content-calc" class="hidden" style="margin: 15px 0;">
             <div id="popup-calc-list" class="calc-detail-box"></div>
             <p style="font-size:12px; color:#64748b; margin-bottom:0px;">Total Terpilih:</p>
             <div style="font-size:28px; font-weight:900; color:var(--success);">Rp <span id="popup-total-val">0</span></div>
         </div>
-
         <div id="popup-desc" class="hidden" style="font-size: 13px; color: gray; margin: 10px 0;"></div>
-        
         <div id="popup-input-wrapper">
             <input type="text" id="popup-input">
             <div id="popup-opt-wrapper" class="hidden" style="margin-top: 10px; text-align: left; display: flex; align-items: center; gap: 8px;">
@@ -61,7 +58,6 @@
             </div>
             <select id="popup-select" class="hidden"></select>
         </div>
-
         <div id="popup-sort-wrapper" class="hidden" style="margin-top:15px;">
             <div class="sort-grid">
                 <div class="sort-col">
@@ -78,12 +74,10 @@
                 </div>
             </div>
         </div>
-        
         <div style="display: flex; gap: 12px; margin-top: 25px;">
             <button id="btn-popup-cancel" style="background:var(--danger); flex:1; color:white; font-weight:bold;" onclick="uiPopupClose()">Batal</button>
             <button id="btn-popup-confirm" style="background:var(--nota); color:white; flex:2">Simpan</button>
         </div>
-        
         <button id="btn-popup-extra" class="hidden" style="margin-top: 10px; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; border: none; cursor: pointer; background: #f1f5f9; color: #64748b;">Batal</button>
     </div>
 </div>
@@ -94,30 +88,17 @@
         <h2 style="margin: 0; color: var(--text);">Nota Folder</h2>
         <p style="color:#64748b; font-size:13px; margin-top:5px; margin-bottom:25px;">Simpan data nota Anda secara Online.</p>
         
-        <button onclick="sysAuthGoogle()" class="btn-google">
-            <span style="font-size:16px; margin-right:10px;">🇬</span> Masuk dengan Google
-        </button>
-        
-        <div style="display:flex; align-items:center; margin: 20px 0; color:#cbd5e1;">
-            <div style="height:1px; background:#e2e8f0; flex:1;"></div>
-            <div style="font-size:10px; padding:0 10px;">ATAU EMAIL</div>
-            <div style="height:1px; background:#e2e8f0; flex:1;"></div>
-        </div>
-
         <input type="email" id="auth-email" placeholder="Alamat Email..." class="login-inp">
-        
         <div class="pass-wrapper">
             <input type="password" id="auth-pass" placeholder="Kata Sandi..." class="login-inp" style="margin-bottom:0;">
             <span id="btn-eye" onclick="sysTogglePass()">👁️</span>
         </div>
-        
         <div style="text-align:right; margin-top:5px; margin-bottom:15px;">
             <button onclick="document.getElementById('popup-forgot').classList.remove('hidden')" 
                     style="background:transparent; border:none; font-size:11px; color:var(--nota); cursor:pointer; font-weight:600; padding:0;">
                 Lupa Kata Sandi?
             </button>
         </div>
-        
         <div style="display:flex; gap:10px; margin-top:15px;">
             <button onclick="sysAuthRegister()" class="btn-login-act" style="background:#fff; color:var(--text); border:1px solid #cbd5e1;">Daftar</button>
             <button onclick="sysAuthLogin()" class="btn-login-act" style="background:var(--nota); color:white; flex:1.5;">Masuk</button>
@@ -128,7 +109,7 @@
 
 <div class="container">
     <div class="header-row">
-        <div class="version-tag" onclick="uiShowChangelog()">Nota Folder v121.29</div>
+        <div class="version-tag" onclick="uiShowChangelog()">Nota Folder v121.34</div>
     </div>
     
     <div class="view-mode-bar">
@@ -178,18 +159,15 @@
                 <input type="checkbox" id="cb-select-all" class="chk-all" onchange="sysToggleSelectAll(this.checked)">
             </div>
         </div>
-
         <div id="comp-grid" class="grid"></div>
     </div>
 
     <div id="view-editor" class="hidden">
         <h2 id="txt-nota-title"></h2>
-        
         <div style="margin-bottom: 5px; display: flex; align-items: center; gap: 5px;">
             <input type="checkbox" id="chk-show-date" onchange="toggleDateSection()" style="accent-color: var(--nota); width: 16px; height: 16px; cursor: pointer;">
             <label for="chk-show-date" style="font-size: 12px; color: var(--nota); font-weight: 600; cursor: pointer;">Atur Tanggal</label>
         </div>
-
         <div id="date-wrapper" class="hidden">
             <div style="display:flex; gap:10px; margin-bottom: 10px;">
                 <button id="btn-mode-single" onclick="sysSetDateMode('single')" class="btn-date">Single Tgl</button>
@@ -197,36 +175,29 @@
             </div>
             <div id="comp-date-row" style="display: grid; gap: 10px; margin-bottom: 15px;"></div>
         </div>
-        
         <div class="table-wrapper"><table class="editor-table"><thead id="comp-thead"></thead><tbody id="comp-tbody"></tbody></table></div>
         
         <div style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 15px;">
-            
             <div style="flex: 1; min-width: 200px;">
                  <div id="total-wrapper" style="text-align:center; margin-bottom: 15px; padding: 15px; border: 1px dashed #cbd5e1; border-radius: 12px;">
                     <div style="font-size:12px; color:#64748b; font-weight:bold;">TOTAL BAYAR :</div>
-                    
                     <div style="display:flex; justify-content:center; align-items:baseline; gap:5px;">
                         <span id="txt-old-total" class="hidden" style="text-decoration:line-through; color:#94a3b8; font-size:10px; align-self: flex-start;"></span>
                         <span style="font-size:2rem; font-weight:900; color:var(--nota);">Rp <span id="txt-total">0</span></span>
                     </div>
-
                     <button onclick="uiPopupOpen('discount')" style="background:transparent; color:var(--nota); border:1px solid var(--nota); padding:5px 15px; border-radius:15px; font-size:11px; margin-top:5px; cursor:pointer;">+ Tambah Diskon</button>
                 </div>
-
                 <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 5px;">
                     <input type="checkbox" id="chk-show-note" onchange="toggleInput('note')" style="accent-color: var(--nota); width: 16px; height: 16px; cursor: pointer;">
                     <label for="chk-show-note" style="font-size: 12px; color: var(--nota); font-weight: 600; cursor: pointer;">Tambah Keterangan</label>
                 </div>
                 <textarea id="inp-nota-note" class="compact-area hidden" style="margin-top:0;" oninput="editStatus(false)" placeholder="Keterangan (Opsional)..." rows="3"></textarea>
-
                 <div style="display: flex; align-items: center; gap: 5px; margin-top: 10px; margin-bottom: 5px;">
                     <input type="checkbox" id="chk-show-resi" onchange="toggleInput('resi')" style="accent-color: var(--nota); width: 16px; height: 16px; cursor: pointer;">
                     <label for="chk-show-resi" style="font-size: 12px; color: var(--nota); font-weight: 600; cursor: pointer;">Tambah No. Resi</label>
                 </div>
                 <input type="text" id="inp-resi" class="hidden" style="margin-top:0;" placeholder="No. Resi / Paket (Opsional)..." oninput="editStatus(false)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; box-sizing:border-box;">
             </div>
-            
         </div>
         
         <div style="margin-top: 25px; display: flex; flex-direction: column; gap: 10px;">
@@ -271,14 +242,10 @@
             <option value="transparent">Tampilan: Transparan</option>
         </select>
         <button id="btn-foot-toggle" style="background:var(--folder); color:white; padding:8px 12px; font-size:12px;" onclick="sysToggleFootnote()">Catatan: OFF</button>
-        
         <button class="btn-download" style="background:var(--success); color:white; padding:8px 12px; font-size:12px;" onclick="sysDownloadImg()">💾 IMAGE</button>
-        
         <button style="background:#8b5cf6; color:white; padding:8px 12px; font-size:12px;" onclick="uiPopupOpen('html_export')">💾 HTML</button>
-        
         <button class="btn-screenshot" style="background:var(--success); color:white; padding:8px 12px; font-size:12px;" onclick="sysEnterScreenshotMode()">📸 SCREENSHOT</button>
         <button class="btn-print" style="background:#0ea5e9; color:white; padding:8px 12px; font-size:12px;" onclick="sysPrint()">🖨️ PDF</button>
-        
         <button style="background:var(--danger); color:white; padding:8px 15px; font-size:14px; font-weight:bold;" onclick="uiPreview(false)">X</button>
     </div>
     <div id="preview-paper"><div id="preview-content"></div></div>
