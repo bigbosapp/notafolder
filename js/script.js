@@ -1,5 +1,5 @@
 /* =========================================
-   NOTA FOLDER v121.17 - FIREBASE EDITION
+   NOTA FOLDER v121.18 - FIX GHOST FOLDER
    Integrasi Cloud: Authentication & Firestore
    ========================================= */
 
@@ -38,7 +38,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // 4. VARIABEL GLOBAL (STATE)
-let currentUser = null; // Menyimpan data user yang login
+let currentUser = null; 
 let storage = [];
 let moveHis = [];
 let curParent = null, activeId = null, selMode = false, selIds = [], curTrashTab = 'folder', customCols = [], isFootActive = false, curTheme = 'standard';
@@ -52,18 +52,15 @@ let resetTimer = null;
    BAGIAN AUTHENTICATION (LOGIN/LOGOUT)
    ========================================= */
 
-// Fungsi Login Google
 window.sysAuthGoogle = async function() {
     const provider = new GoogleAuthProvider();
     try {
         await signInWithPopup(auth, provider);
-        // onAuthStateChanged akan menangani sisanya
     } catch (error) {
         document.getElementById('auth-msg').innerText = "Gagal: " + error.message;
     }
 }
 
-// Fungsi Login Email/Pass
 window.sysAuthLogin = async function() {
     const e = document.getElementById('auth-email').value;
     const p = document.getElementById('auth-pass').value;
@@ -75,7 +72,6 @@ window.sysAuthLogin = async function() {
     }
 }
 
-// Fungsi Register Email/Pass
 window.sysAuthRegister = async function() {
     const e = document.getElementById('auth-email').value;
     const p = document.getElementById('auth-pass').value;
@@ -88,39 +84,28 @@ window.sysAuthRegister = async function() {
     }
 }
 
-// Fungsi Logout
 window.sysAppLogout = function() {
     uiConfirmAction("Keluar Akun?", "Data Anda aman di server.", () => {
-        signOut(auth).then(() => {
-            location.reload(); // Refresh halaman agar bersih
-        });
+        signOut(auth).then(() => { location.reload(); });
     }, true);
 }
 
-// LISTENER: Cek Status Login Pengguna
 onAuthStateChanged(auth, async (user) => {
     const loginOverlay = document.getElementById('view-login');
     if (user) {
-        // --- USER BERHASIL LOGIN ---
         currentUser = user;
-        loginOverlay.classList.add('hidden'); // Sembunyikan layar login
+        loginOverlay.classList.add('hidden'); 
         uiNotify(`Halo, ${user.displayName || user.email}!`);
-        
-        // Load data dari Cloud Firestore
         await loadDataFromCloud();
-        
-        // Ubah tombol "Reset" jadi "Logout" agar lebih berguna
         const btnReset = document.querySelector('.view-mode-bar .view-btn[style*="var(--danger)"]');
         if(btnReset) {
-            btnReset.innerHTML = "⏏"; // Icon Logout
+            btnReset.innerHTML = "⏏"; 
             btnReset.onclick = window.sysAppLogout;
             btnReset.style.color = "var(--danger)";
         }
     } else {
-        // --- USER BELUM LOGIN / LOGOUT ---
-        currentUser = null;
-        storage = []; // Kosongkan memori
-        loginOverlay.classList.remove('hidden'); // Tampilkan layar login
+        currentUser = null; storage = []; moveHis = [];
+        loginOverlay.classList.remove('hidden'); 
     }
 });
 
@@ -128,55 +113,34 @@ onAuthStateChanged(auth, async (user) => {
    BAGIAN DATABASE (FIRESTORE)
    ========================================= */
 
-// Fungsi Load Data (Hanya dipanggil sekali saat login)
 async function loadDataFromCloud() {
     if(!currentUser) return;
     uiNotify("Memuat data...", "success");
     try {
-        // Kita simpan semua data user dalam 1 dokumen agar struktur array 'storage' tetap jalan
         const docRef = doc(db, "users", currentUser.uid);
         const docSnap = await getDoc(docRef);
-
         if (docSnap.exists()) {
             const data = docSnap.data();
-            // Parsing JSON string kembali ke Object Array
             storage = data.storage ? JSON.parse(data.storage) : [];
             moveHis = data.history ? JSON.parse(data.history) : [];
         } else {
-            // Pengguna baru, belum ada data
-            storage = [];
-            moveHis = [];
+            storage = []; moveHis = [];
         }
-        // Render tampilan setelah data siap
-        navRenderGrid();
-        uiNotify("Data siap!");
+        navRenderGrid(); uiNotify("Data siap!");
     } catch (e) {
-        console.error(e);
-        uiNotify("Gagal memuat data: " + e.message, "danger");
+        console.error(e); uiNotify("Gagal memuat data: " + e.message, "danger");
     }
 }
 
-// Fungsi Simpan Data (Dipanggil setiap kali ada perubahan/CRUD)
-// Menggantikan localStorage.setItem
 window.dbSave = async function() {
-    if(!currentUser) return; // Jangan simpan jika belum login
-    
-    // Simpan ke memory lokal dulu (biar UI cepat update)
-    // Tidak perlu localStorage lagi, karena data ada di RAM variabel 'storage'
-    
-    // Kirim ke Cloud (Background process)
-    // Kita gunakan teknik 'fire and forget' agar UI tidak nge-lag menunggu upload
+    if(!currentUser) return; 
     const docRef = doc(db, "users", currentUser.uid);
-    
     try {
         await setDoc(docRef, {
-            storage: JSON.stringify(storage), // Convert array ke string agar muat di Firestore Field
+            storage: JSON.stringify(storage), 
             history: JSON.stringify(moveHis),
             lastUpdate: new Date().toISOString()
         }, { merge: true });
-        
-        // Opsional: Kasih tanda kecil di console atau UI kalau sedang saving
-        console.log("Cloud synced."); 
     } catch (e) {
         console.error("Gagal simpan ke cloud:", e);
         uiNotify("Gagal simpan ke server! Cek internet.", "danger");
@@ -185,8 +149,26 @@ window.dbSave = async function() {
 
 /* =========================================
    FUNGSI-FUNGSI LOGIKA APP (CRUD)
-   (Dipertahankan dari versi sebelumnya)
    ========================================= */
+
+// --- FIX UTAMA: Validasi Silsilah Folder ---
+// Mengecek apakah folder ini valid (tidak yatim piatu / ghost)
+window.isValidPath = function(item) {
+    // 1. Jika item ini sendiri ada di sampah, berarti tidak valid
+    if(item.inTrash) return false;
+    
+    // 2. Jika sudah sampai di akar (Beranda), berarti valid
+    if(!item.parentId || item.parentId === 'HOME') return true;
+    
+    // 3. Cari bapaknya
+    const parent = storage.find(p => p.id === item.parentId);
+    
+    // 4. Jika bapaknya tidak ditemukan (Ghost Parent), berarti jalur putus -> tidak valid
+    if(!parent) return false;
+    
+    // 5. Cek lagi ke atas (Rekursif)
+    return isValidPath(parent);
+}
 
 window.isDescendant = function(parentId, childId) {
     if (!parentId || !childId) return false;
@@ -204,6 +186,7 @@ window.sysSanitizeDB = function() {
         if (item.parentId && item.parentId !== 'HOME') {
             const parentExists = storage.some(p => p.id === item.parentId && !p.inTrash);
             if (!parentExists) {
+                // Jika bapaknya hilang, pindah ke HOME agar bisa diselamatkan/dihapus manual user
                 item.parentId = null; 
                 changed = true;
             }
@@ -223,7 +206,6 @@ window.sysAutoCleanup = function() {
         }
         return true;
     });
-    // Simpan jika ada yang dihapus
     if (storage.length !== initialStorageLen) { dbSave(); }
 }
 
@@ -270,11 +252,8 @@ window.sysGetFolderTotal = function(parentId) {
     let total = 0;
     const children = storage.filter(i => i.parentId === parentId && !i.inTrash);
     children.forEach(child => {
-        if (child.type === 'nota' && child.items) {
-            total += sysGetNetTotal(child); 
-        } else if (child.type === 'folder') {
-            total += sysGetFolderTotal(child.id);
-        }
+        if (child.type === 'nota' && child.items) { total += sysGetNetTotal(child); } 
+        else if (child.type === 'folder') { total += sysGetFolderTotal(child.id); }
     });
     return total;
 }
@@ -287,12 +266,10 @@ window.sysSumSelected = function() {
         if(item) {
             let itemVal = 0;
             if(item.type === 'nota') { 
-                itemVal = sysGetNetTotal(item); 
-                files.push({ name: item.name, val: itemVal }); 
+                itemVal = sysGetNetTotal(item); files.push({ name: item.name, val: itemVal }); 
             } 
             else if(item.type === 'folder') { 
-                itemVal = sysGetFolderTotal(item.id); 
-                folders.push({ name: item.name, val: itemVal }); 
+                itemVal = sysGetFolderTotal(item.id); folders.push({ name: item.name, val: itemVal }); 
             }
             totalSum += itemVal;
         }
@@ -309,10 +286,7 @@ window.sysToggleSelectAll = function(isChecked) {
 }
 
 window.uiShowChangelog = function() {
-    const logs = [
-        "<b>v121.17 (Cloud)</b>: Integrasi Firebase. Data aman di server Google.",
-        "<b>v121.16</b>: Fix Hitung Diskon, Desimal, & Search.",
-    ];
+    const logs = ["<b>v121.18 (Fix)</b>: Perbaikan Ghost Folder saat memindahkan file.", "<b>v121.17 (Cloud)</b>: Integrasi Firebase."];
     uiPopupOpen('changelog', logs);
 }
 
@@ -329,11 +303,6 @@ window.sysChangeView = function(mode) {
     document.getElementById('vm-details').classList.toggle('active', mode === 'details');
     document.getElementById('comp-grid').className = mode === 'simple' ? 'grid' : 'list-container';
     navRenderGrid();
-}
-
-window.sysAppResetConfirm = function() {
-    // Fungsi ini sekarang dipakai untuk LOGOUT di auth listener,
-    // tapi tetap kita biarkan sebagai fallback reset lokal jika diperlukan
 }
 
 window.sysUpdateBreadcrumbs = function() {
@@ -421,9 +390,7 @@ window.sysSearch = function(k) {
         const matchName = i.name.toLowerCase().includes(k.toLowerCase());
         const matchCode = i.uCode && i.uCode.toLowerCase().includes(k.toLowerCase());
         let matchItem = false;
-        if (i.type === 'nota' && i.items) {
-            matchItem = i.items.some(row => row.barang.toLowerCase().includes(k.toLowerCase()));
-        }
+        if (i.type === 'nota' && i.items) { matchItem = i.items.some(row => row.barang.toLowerCase().includes(k.toLowerCase())); }
         return matchName || matchCode || matchItem;
     });
 
@@ -468,18 +435,10 @@ window.navBack = function(isHardware = false, force = false) {
 }
 
 window.onpopstate = function(event) { 
-    if(!document.getElementById('comp-popup').classList.contains('hidden')) { 
-        uiPopupClose(); history.pushState(history.state, null, ""); return; 
-    } 
-    if(!document.getElementById('comp-trash-modal').classList.contains('hidden')) { 
-        uiTrashClose(); history.pushState(history.state, null, ""); return; 
-    } 
-    if(!document.getElementById('preview-screen').classList.contains('hidden')) { 
-        uiPreview(false); history.pushState(history.state, null, ""); return; 
-    } 
-    if(document.body.classList.contains('is-clean-mode')) { 
-        document.body.classList.remove('is-clean-mode'); history.pushState(history.state, null, ""); return; 
-    } 
+    if(!document.getElementById('comp-popup').classList.contains('hidden')) { uiPopupClose(); history.pushState(history.state, null, ""); return; } 
+    if(!document.getElementById('comp-trash-modal').classList.contains('hidden')) { uiTrashClose(); history.pushState(history.state, null, ""); return; } 
+    if(!document.getElementById('preview-screen').classList.contains('hidden')) { uiPreview(false); history.pushState(history.state, null, ""); return; } 
+    if(document.body.classList.contains('is-clean-mode')) { document.body.classList.remove('is-clean-mode'); history.pushState(history.state, null, ""); return; } 
 
     if (document.body.classList.contains('mode-editor')) {
         const statusText = document.getElementById('txt-save-status').innerText;
@@ -503,7 +462,6 @@ window.onpopstate = function(event) {
                 document.getElementById('chk-show-note').checked = (n.showNote !== undefined ? n.showNote : !!n.noteContent);
                 document.getElementById('inp-nota-note').classList.toggle('hidden', !document.getElementById('chk-show-note').checked);
                 document.getElementById('inp-nota-note').value = n.noteContent || "";
-                document.getElementById('chk-show-resi').checked = (n.showResi !== undefined ? n.showResi : !!n.resi);
                 document.getElementById('inp-resi').classList.toggle('hidden', !document.getElementById('chk-show-resi').checked);
                 document.getElementById('inp-resi').value = n.resi || "";
                 const showDate = n.showDate !== undefined ? n.showDate : false;
@@ -582,7 +540,15 @@ window.uiPopupOpen = function(type, extra = null) {
     else if(type === 'move') { 
         if(selIds.length === 0) { uiPopupClose(); return uiNotify("Pilih item dulu!", "danger"); } 
         icon.innerText = '🚚'; title.innerText = "Pindahkan Item"; desc.innerText = "Pilih Folder Tujuan:"; desc.classList.remove('hidden'); wrap.classList.remove('hidden'); input.classList.add('hidden'); sel.classList.remove('hidden'); 
-        const validDestinations = storage.filter(f => !f.inTrash && f.type === 'folder' && !selIds.includes(f.id) && !selIds.some(selId => isDescendant(selId, f.id))); 
+        
+        // --- FIX FILTER: GUNAKAN isValidPath ---
+        const validDestinations = storage.filter(f => 
+            f.type === 'folder' && 
+            !selIds.includes(f.id) && 
+            !selIds.some(selId => isDescendant(selId, f.id)) &&
+            isValidPath(f) // <<-- TAMBAHAN: Hapus folder hantu
+        ); 
+        
         sel.innerHTML = '<option value="">-- Pilih Folder --</option><option value="HOME">🏠 BERANDA</option>'; 
         validDestinations.sort((a,b)=>a.name.localeCompare(b.name)).forEach(f => { sel.innerHTML += `<option value="${f.id}">📁 ${f.name}</option>`; }); 
         btn.innerText = "Pindah"; btn.style.background = "var(--folder)"; btn.onclick = () => { if (!sel.value) return uiNotify("Pilih tujuan!", "danger"); uiPopupClose(); sysMove(sel.value); }; 
