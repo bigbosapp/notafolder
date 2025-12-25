@@ -1,6 +1,6 @@
 /* =========================================
-   NOTA FOLDER v121.30 - EMAIL CHECK FIX
-   Fitur: Cek Email Terdaftar saat Reset Password
+   NOTA FOLDER v121.31 - MANAJEMEN DATA LOKAL
+   Fitur: Popup "Cadangkan vs Hapus" Data Lama
    ========================================= */
 
 // 1. IMPORT FIREBASE
@@ -55,7 +55,7 @@ let sortOrder = localStorage.getItem('notafolder_sort_order') || 'created';
 let resetTimer = null;
 
 /* =========================================
-   BAGIAN HELPER (PESAN ERROR)
+   BAGIAN HELPER (PESAN ERROR & POPUP)
    ========================================= */
 
 function getFriendlyError(error) {
@@ -79,7 +79,6 @@ function getFriendlyError(error) {
     }
 }
 
-// Menampilkan Pesan Teks di Bawah Tombol Login
 function uiShowAuthMsg(msg, isError = true) {
     const el = document.getElementById('auth-msg');
     el.innerHTML = msg; 
@@ -97,7 +96,6 @@ function uiShowAuthMsg(msg, isError = true) {
    BAGIAN AUTHENTICATION & SECURITY
    ========================================= */
 
-// 1. LIHAT PASSWORD
 window.sysTogglePass = function() {
     const inp = document.getElementById('auth-pass');
     const icon = document.getElementById('btn-eye');
@@ -110,7 +108,6 @@ window.sysTogglePass = function() {
     }
 }
 
-// 2. LUPA PASSWORD (LOGIC POPUP) - UPDATE ERROR HANDLER
 window.sysSubmitForgotPass = async function() {
     const emailInput = document.getElementById('inp-forgot-email');
     const email = emailInput.value;
@@ -125,8 +122,6 @@ window.sysSubmitForgotPass = async function() {
     
     try {
         await sendPasswordResetEmail(auth, email);
-        
-        // JIKA SUKSES: Tutup Popup Forgot & Tampilkan Pesan Sukses
         document.getElementById('popup-forgot').classList.add('hidden');
         uiConfirmAction(
             "Link Terkirim!", 
@@ -136,9 +131,7 @@ window.sysSubmitForgotPass = async function() {
         uiShowAuthMsg("Link reset password berhasil dikirim!", false);
         
     } catch (error) {
-        // JIKA GAGAL: Tampilkan Popup Error (Tanpa menutup form email agar bisa dikoreksi)
         console.log("Reset Error:", error.code);
-        
         if (error.code === 'auth/user-not-found') {
             uiConfirmAction(
                 "Email Salah!", 
@@ -151,7 +144,6 @@ window.sysSubmitForgotPass = async function() {
     }
 }
 
-// 3. LOGIN GOOGLE
 window.sysAuthGoogle = async function() {
     const provider = new GoogleAuthProvider();
     uiShowAuthMsg("");
@@ -159,7 +151,6 @@ window.sysAuthGoogle = async function() {
     catch (error) { uiShowAuthMsg(getFriendlyError(error)); }
 }
 
-// 4. LOGIN EMAIL BIASA
 window.sysAuthLogin = async function() {
     const e = document.getElementById('auth-email').value;
     const p = document.getElementById('auth-pass').value;
@@ -173,7 +164,6 @@ window.sysAuthLogin = async function() {
     catch (error) { uiShowAuthMsg(getFriendlyError(error)); }
 }
 
-// 5. DAFTAR (REGISTRASI)
 window.sysAuthRegister = async function() {
     const e = document.getElementById('auth-email').value;
     const p = document.getElementById('auth-pass').value;
@@ -184,14 +174,9 @@ window.sysAuthRegister = async function() {
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, e, p);
         const user = userCredential.user;
-        
-        // Kirim Email Verifikasi
         await sendEmailVerification(user);
-        
-        // PENTING: Langsung LOGOUT (Tendang User agar tidak bisa masuk)
         await signOut(auth);
         
-        // Beritahu user
         uiConfirmAction(
             "Berhasil Daftar!", 
             `Link verifikasi dikirim ke <b>${e}</b>.<br><br><b>PENTING:</b> Buka email Anda, klik link verifikasi, lalu kembali ke sini untuk Login.`, 
@@ -204,28 +189,23 @@ window.sysAuthRegister = async function() {
     }
 }
 
-// --- GATEKEEPER (SATPAM PINTU MASUK) ---
+// --- GATEKEEPER ---
 onAuthStateChanged(auth, async (user) => {
     const loginOverlay = document.getElementById('view-login');
     
     if (user) {
-        // CEK VERIFIKASI EMAIL
         if (!user.emailVerified) {
             console.log("Akses Ditolak: Email belum verified.");
-            
             uiShowAuthMsg("⛔ Email belum diverifikasi! Cek Inbox/Spam dan klik linknya.", true);
-            
             uiConfirmAction(
                 "Akses Ditolak", 
                 "Email Anda belum terverifikasi.<br>Silakan cek email (Inbox/Spam) dan klik link aktivasi yang kami kirim.",
                 () => {}, true, "Tutup"
             );
-
             await signOut(auth);
             return; 
         }
 
-        // JIKA LOLOS:
         currentUser = user;
         loginOverlay.classList.add('hidden'); 
         uiNotify(`Selamat datang, ${user.displayName || 'User'}!`);
@@ -290,17 +270,24 @@ window.dbSave = async function() {
     }
 }
 
+// UPDATE: CEK DATA LOKAL DENGAN 2 OPSI (CADANGKAN vs HAPUS)
 window.sysCheckLocalData = function() {
     const localRaw = localStorage.getItem(DB_KEY_OLD);
     if(localRaw && localRaw.length > 5) {
         const localData = JSON.parse(localRaw);
         if(localData.length > 0) {
             uiConfirmAction(
-                "Data Lama Ditemukan!", 
-                `Ada ${localData.length} file tersimpan di HP ini (Offline).<br>Ingin meng-uploadnya ke Akun Cloud Anda?`, 
-                () => { sysUploadLocalData(localData); },
-                false,
-                "Upload"
+                "Data Offline Ditemukan", 
+                `Ditemukan <b>${localData.length} file</b> tersimpan di browser ini (Offline).<br><br>• Pilih <b>Cadangkan</b> untuk upload ke Cloud.<br>• Pilih <b>Hapus</b> untuk membuang dari HP ini.`, 
+                () => { sysUploadLocalData(localData); }, // Aksi Tombol Kanan (Cadangkan)
+                false, 
+                "Cadangkan", // Teks Tombol Kanan
+                "Hapus", // Teks Tombol Kiri
+                () => { // Aksi Tombol Kiri (Hapus)
+                    localStorage.removeItem(DB_KEY_OLD);
+                    localStorage.removeItem(HIS_KEY_OLD);
+                    uiNotify("Data offline berhasil dihapus dari browser.", "success");
+                }
             );
         }
     }
@@ -317,7 +304,9 @@ window.sysUploadLocalData = function(localData) {
         }
     });
     if(added > 0) {
-        dbSave(); navRenderGrid(); uiNotify(`Berhasil memulihkan ${added} file lama!`);
+        dbSave(); navRenderGrid(); uiNotify(`Berhasil mencadangkan ${added} file!`);
+        // Opsional: Hapus data lokal setelah sukses upload agar tidak muncul lagi
+        // localStorage.removeItem(DB_KEY_OLD); 
     } else {
         uiNotify("Data lokal sudah ada di Cloud.");
     }
@@ -450,7 +439,7 @@ window.sysToggleSelectAll = function(isChecked) {
 }
 
 window.uiShowChangelog = function() {
-    const logs = ["<b>v121.30 (Final)</b>: Deteksi Email Tidak Terdaftar (Wajib Setting Console).", "<b>v121.29 (Popup)</b>: Popup Reset Password."];
+    const logs = ["<b>v121.31 (Data)</b>: Opsi Hapus Data Lama di Browser.", "<b>v121.30 (Fix)</b>: Deteksi Email Tidak Terdaftar."];
     uiPopupOpen('changelog', logs);
 }
 
@@ -659,12 +648,38 @@ window.uiPopupReset = function() {
     bc.onclick = () => { uiPopupClose(); }; document.getElementById('popup-input').value = ""; document.getElementById('popup-desc').innerHTML = ""; 
 }
 
-window.uiConfirmAction = function(t, d, o, s, customBtnText = null) { 
-    uiPopupReset(); const c = document.getElementById('comp-popup'); document.getElementById('popup-icon').innerText = s ? '⚠️' : 'ℹ️'; document.getElementById('popup-title').innerText = t; document.getElementById('popup-desc').innerHTML = d; document.getElementById('popup-desc').classList.remove('hidden'); 
-    const b = document.getElementById('btn-popup-confirm'); const bc = document.getElementById('btn-popup-cancel');
+// UPDATE: FUNGSI POPUP DENGAN CUSTOM CANCEL
+window.uiConfirmAction = function(t, d, o, s, customBtnText = null, customCancelText = null, onCancel = null) { 
+    uiPopupReset(); 
+    const c = document.getElementById('comp-popup'); 
+    document.getElementById('popup-icon').innerText = s ? '⚠️' : 'ℹ️'; 
+    document.getElementById('popup-title').innerText = t; 
+    document.getElementById('popup-desc').innerHTML = d; 
+    document.getElementById('popup-desc').classList.remove('hidden'); 
+    
+    const b = document.getElementById('btn-popup-confirm'); 
+    const bc = document.getElementById('btn-popup-cancel');
+    
+    // Konfigurasi Tombol Kanan (Confirm)
     b.style.background = s ? "var(--danger)" : "var(--success)"; 
     b.innerText = customBtnText ? customBtnText : (s ? "Hapus" : "Ya"); 
-    b.disabled = false; bc.style.background = "#f1f5f9"; bc.style.color = "#64748b"; bc.innerText = "Batal"; c.classList.remove('hidden'); b.onclick = () => { o(); uiPopupClose(); }; bc.onclick = () => { uiPopupClose(); }; 
+    b.disabled = false;
+    b.onclick = () => { o(); uiPopupClose(); }; 
+
+    // Konfigurasi Tombol Kiri (Cancel)
+    bc.innerText = customCancelText ? customCancelText : "Batal";
+    bc.onclick = () => { if(onCancel) onCancel(); uiPopupClose(); }; 
+    
+    // Style khusus jika tombol kiri adalah "Hapus"
+    if(customCancelText === "Hapus") {
+        bc.style.background = "var(--danger)";
+        bc.style.color = "white";
+    } else {
+        bc.style.background = "#f1f5f9";
+        bc.style.color = "#64748b";
+    }
+
+    c.classList.remove('hidden'); 
 }
 
 window.uiPopupOpen = function(type, extra = null) {
