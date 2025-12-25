@@ -1,6 +1,6 @@
 /* =========================================
-   NOTA FOLDER v121.20 - USER PROFILE UPDATE
-   Integrasi Cloud + Tampilan User + Custom Logout
+   NOTA FOLDER v121.21 - PRO ERROR MESSAGE
+   Integrasi Cloud + Custom Error Handler
    ========================================= */
 
 // 1. IMPORT FIREBASE
@@ -53,76 +53,105 @@ let sortOrder = localStorage.getItem('notafolder_sort_order') || 'created';
 let resetTimer = null;
 
 /* =========================================
+   BAGIAN HELPER (PENERJEMAH ERROR)
+   ========================================= */
+
+function getFriendlyError(error) {
+    console.log("Error Code:", error.code); // Untuk debugging developer
+    switch (error.code) {
+        case 'auth/invalid-email':
+            return "Format email tidak valid.";
+        case 'auth/user-not-found':
+            return "Akun tidak ditemukan. Silakan daftar dulu.";
+        case 'auth/wrong-password':
+            return "Kata sandi salah.";
+        case 'auth/email-already-in-use':
+            return "Email ini sudah terdaftar.";
+        case 'auth/weak-password':
+            return "Kata sandi terlalu lemah (min. 6 karakter).";
+        case 'auth/popup-closed-by-user':
+            return "Login dibatalkan.";
+        case 'auth/network-request-failed':
+            return "Gagal terhubung. Cek koneksi internet.";
+        case 'auth/too-many-requests':
+            return "Terlalu banyak percobaan. Tunggu sebentar.";
+        case 'auth/invalid-credential':
+            return "Kombinasi Email/Password salah.";
+        default:
+            // Jika error tidak dikenal, tampilkan pesan aslinya tapi lebih rapi
+            return "Terjadi kesalahan sistem. (" + error.code + ")";
+    }
+}
+
+/* =========================================
    BAGIAN AUTHENTICATION
    ========================================= */
 
 window.sysAuthGoogle = async function() {
     const provider = new GoogleAuthProvider();
     try { await signInWithPopup(auth, provider); } 
-    catch (error) { document.getElementById('auth-msg').innerText = "Gagal: " + error.message; }
+    catch (error) { document.getElementById('auth-msg').innerText = getFriendlyError(error); }
 }
 
 window.sysAuthLogin = async function() {
     const e = document.getElementById('auth-email').value;
     const p = document.getElementById('auth-pass').value;
-    if(!e || !p) return document.getElementById('auth-msg').innerText = "Isi email & password!";
+    if(!e || !p) return document.getElementById('auth-msg').innerText = "Mohon isi email & kata sandi.";
     try { await signInWithEmailAndPassword(auth, e, p); } 
-    catch (error) { document.getElementById('auth-msg').innerText = "Error: " + error.message; }
+    catch (error) { document.getElementById('auth-msg').innerText = getFriendlyError(error); }
 }
 
 window.sysAuthRegister = async function() {
     const e = document.getElementById('auth-email').value;
     const p = document.getElementById('auth-pass').value;
-    if(!e || !p) return document.getElementById('auth-msg').innerText = "Isi email & password!";
+    if(!e || !p) return document.getElementById('auth-msg').innerText = "Mohon isi email & kata sandi.";
     try {
         await createUserWithEmailAndPassword(auth, e, p);
-        uiNotify("Akun dibuat! Selamat datang.");
+        uiNotify("Akun berhasil dibuat! Selamat datang.");
     } catch (error) {
-        document.getElementById('auth-msg').innerText = "Error: " + error.message;
+        document.getElementById('auth-msg').innerText = getFriendlyError(error);
     }
 }
 
-// UPDATE: Listener Auth dengan Tampilan Profil
+// LISTENER AUTH (PROFIL & LOGOUT)
 onAuthStateChanged(auth, async (user) => {
     const loginOverlay = document.getElementById('view-login');
     if (user) {
         currentUser = user;
         loginOverlay.classList.add('hidden'); 
-        uiNotify(`Halo, ${user.displayName || user.email}!`);
+        uiNotify(`Selamat datang, ${user.displayName || 'User'}!`);
         
         await loadDataFromCloud();
         setTimeout(sysCheckLocalData, 1000); 
 
-        // --- UPDATE TAMPILAN TOMBOL PROFIL ---
+        // TAMPILAN TOMBOL PROFIL
         const btnReset = document.querySelector('.view-mode-bar .view-btn[style*="var(--danger)"]');
         if(btnReset) {
-            // Potong email jika terlalu panjang agar muat di layar HP
             let displayName = user.email.split('@')[0];
             if(displayName.length > 10) displayName = displayName.substring(0, 10) + '...';
 
             btnReset.innerHTML = `<span style="font-size:11px;">👤 ${displayName}</span>`; 
             btnReset.style.width = "auto"; 
             btnReset.style.minWidth = "80px";
-            btnReset.style.color = "var(--text)"; // Warna teks normal (hitam)
+            btnReset.style.color = "var(--text)";
             btnReset.style.borderColor = "#cbd5e1";
             
-            // Override fungsi klik menjadi konfirmasi Logout
             btnReset.onclick = function() {
                 uiConfirmAction(
                     "Logout / Keluar?", 
-                    `Anda login sebagai:<br><b>${user.email}</b><br><br>Yakin ingin keluar?`, 
+                    `Akun: <b>${user.email}</b><br><br>Ingin keluar dari aplikasi?`, 
                     () => {
                         signOut(auth).then(() => { location.reload(); });
                     }, 
-                    true, // Mode danger (Merah)
-                    "Keluar" // Custom Teks Tombol
+                    true, 
+                    "Keluar"
                 );
             };
         }
-        // -------------------------------------
     } else {
         currentUser = null; storage = []; moveHis = [];
         loginOverlay.classList.remove('hidden'); 
+        document.getElementById('auth-msg').innerText = ""; // Bersihkan pesan error lama
     }
 });
 
@@ -145,7 +174,7 @@ async function loadDataFromCloud() {
         }
         navRenderGrid(); uiNotify("Data Cloud Siap!");
     } catch (e) {
-        console.error(e); uiNotify("Gagal memuat Cloud: " + e.message, "danger");
+        console.error(e); uiNotify("Gagal memuat: " + e.message, "danger");
     }
 }
 
@@ -325,7 +354,7 @@ window.sysToggleSelectAll = function(isChecked) {
 }
 
 window.uiShowChangelog = function() {
-    const logs = ["<b>v121.20 (UI)</b>: Update Tampilan Profil User.", "<b>v121.19 (Sync)</b>: Fitur Upload Data Offline."];
+    const logs = ["<b>v121.21 (Pro)</b>: Pesan Error Bahasa Indonesia yang lebih ramah.", "<b>v121.20 (UI)</b>: Update Tampilan Profil User."];
     uiPopupOpen('changelog', logs);
 }
 
@@ -534,12 +563,10 @@ window.uiPopupReset = function() {
     bc.onclick = () => { uiPopupClose(); }; document.getElementById('popup-input').value = ""; document.getElementById('popup-desc').innerHTML = ""; 
 }
 
-// UPDATE: Tambahan Parameter 'customBtnText'
 window.uiConfirmAction = function(t, d, o, s, customBtnText = null) { 
     uiPopupReset(); const c = document.getElementById('comp-popup'); document.getElementById('popup-icon').innerText = s ? '⚠️' : 'ℹ️'; document.getElementById('popup-title').innerText = t; document.getElementById('popup-desc').innerHTML = d; document.getElementById('popup-desc').classList.remove('hidden'); 
     const b = document.getElementById('btn-popup-confirm'); const bc = document.getElementById('btn-popup-cancel');
     b.style.background = s ? "var(--danger)" : "var(--success)"; 
-    // Logic teks tombol: Jika ada customBtnText pakai itu, jika tidak pakai default Hapus/Ya
     b.innerText = customBtnText ? customBtnText : (s ? "Hapus" : "Ya"); 
     b.disabled = false; bc.style.background = "#f1f5f9"; bc.style.color = "#64748b"; bc.innerText = "Batal"; c.classList.remove('hidden'); b.onclick = () => { o(); uiPopupClose(); }; bc.onclick = () => { uiPopupClose(); }; 
 }
