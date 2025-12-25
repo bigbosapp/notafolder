@@ -1,5 +1,5 @@
 /* =========================================
-   NOTA FOLDER v121.28 - POPUP RESET FIX
+   NOTA FOLDER v121.29 - FIX POPUP JS
    Fitur: Popup Lupa Password + Wajib Verifikasi
    ========================================= */
 
@@ -110,15 +110,17 @@ window.sysTogglePass = function() {
     }
 }
 
-// 2. LUPA PASSWORD (RESET VIA POPUP) -- BARU
+// 2. LUPA PASSWORD (LOGIC POPUP) - BARU!
 window.sysSubmitForgotPass = async function() {
     const emailInput = document.getElementById('inp-forgot-email');
     const email = emailInput.value;
     
     if(!email) {
         emailInput.focus();
-        emailInput.style.borderColor = "red";
-        return; // Jangan lanjut kalau kosong
+        emailInput.style.border = "2px solid red";
+        return; 
+    } else {
+        emailInput.style.border = "1px solid #cbd5e1";
     }
     
     try {
@@ -127,17 +129,17 @@ window.sysSubmitForgotPass = async function() {
         // Tutup Popup
         document.getElementById('popup-forgot').classList.add('hidden');
         
-        // Tampilkan Sukses Besar
+        // Tampilkan Sukses di Layar Login
         uiConfirmAction(
             "Link Terkirim!", 
-            `Kami sudah mengirim link reset ke: <b>${email}</b><br><br>Silakan cek Inbox atau Spam email Anda sekarang.`, 
+            `Link reset password telah dikirim ke: <b>${email}</b><br><br>Cek Inbox atau Spam email Anda sekarang.`, 
             () => {}, false, "Siap"
         );
         uiShowAuthMsg("Link reset password berhasil dikirim!", false);
         
     } catch (error) {
-        // Jika error (misal email ga ketemu), tampilkan alert
-        alert(getFriendlyError(error));
+        // Jika error (misal email ga ketemu)
+        alert("Gagal: " + getFriendlyError(error));
     }
 }
 
@@ -445,7 +447,7 @@ window.sysToggleSelectAll = function(isChecked) {
 }
 
 window.uiShowChangelog = function() {
-    const logs = ["<b>v121.28 (Popup Reset)</b>: Popup khusus untuk Lupa Password.", "<b>v121.27 (Gatekeeper)</b>: Wajib Verifikasi Email."];
+    const logs = ["<b>v121.29 (Fix Popup)</b>: Popup Lupa Password.", "<b>v121.27 (Gatekeeper)</b>: Wajib Verifikasi Email."];
     uiPopupOpen('changelog', logs);
 }
 
