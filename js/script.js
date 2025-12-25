@@ -1,6 +1,6 @@
 /* =========================================
-   NOTA FOLDER v121.21 - PRO ERROR MESSAGE
-   Integrasi Cloud + Custom Error Handler
+   NOTA FOLDER v121.22 - MODERN POPUP ERROR
+   Integrasi Cloud + Popup Error Profesional
    ========================================= */
 
 // 1. IMPORT FIREBASE
@@ -53,34 +53,50 @@ let sortOrder = localStorage.getItem('notafolder_sort_order') || 'created';
 let resetTimer = null;
 
 /* =========================================
-   BAGIAN HELPER (PENERJEMAH ERROR)
+   BAGIAN HELPER (MODERN ERROR POPUP)
    ========================================= */
 
-function getFriendlyError(error) {
-    console.log("Error Code:", error.code); // Untuk debugging developer
-    switch (error.code) {
-        case 'auth/invalid-email':
-            return "Format email tidak valid.";
-        case 'auth/user-not-found':
-            return "Akun tidak ditemukan. Silakan daftar dulu.";
-        case 'auth/wrong-password':
-            return "Kata sandi salah.";
-        case 'auth/email-already-in-use':
-            return "Email ini sudah terdaftar.";
-        case 'auth/weak-password':
-            return "Kata sandi terlalu lemah (min. 6 karakter).";
-        case 'auth/popup-closed-by-user':
-            return "Login dibatalkan.";
-        case 'auth/network-request-failed':
-            return "Gagal terhubung. Cek koneksi internet.";
-        case 'auth/too-many-requests':
-            return "Terlalu banyak percobaan. Tunggu sebentar.";
-        case 'auth/invalid-credential':
-            return "Kombinasi Email/Password salah.";
-        default:
-            // Jika error tidak dikenal, tampilkan pesan aslinya tapi lebih rapi
-            return "Terjadi kesalahan sistem. (" + error.code + ")";
+// Fungsi Baru: Menampilkan Error di Popup Modern
+function uiShowError(title, errorObj) {
+    let msg = "Terjadi kesalahan tidak dikenal.";
+    
+    // Jika inputnya string biasa (Custom Message)
+    if (typeof errorObj === 'string') {
+        msg = errorObj;
+    } 
+    // Jika inputnya Error Object dari Firebase
+    else if (errorObj && errorObj.code) {
+        console.log("Error Code:", errorObj.code); // Log untuk developer
+        switch (errorObj.code) {
+            case 'auth/invalid-email':
+                msg = "Format alamat email tidak valid.<br>Contoh: nama@gmail.com"; break;
+            case 'auth/user-not-found':
+                msg = "Akun tidak ditemukan.<br>Silakan periksa email atau daftar baru."; break;
+            case 'auth/wrong-password':
+                msg = "Kata sandi salah.<br>Silakan coba lagi."; break;
+            case 'auth/email-already-in-use':
+                msg = "Email ini sudah terdaftar.<br>Silakan langsung Login."; break;
+            case 'auth/weak-password':
+                msg = "Kata sandi terlalu lemah.<br>Gunakan minimal 6 karakter."; break;
+            case 'auth/popup-closed-by-user':
+                msg = "Proses Login dibatalkan."; break;
+            case 'auth/network-request-failed':
+                msg = "Gagal terhubung ke server.<br>Periksa koneksi internet Anda."; break;
+            case 'auth/too-many-requests':
+                msg = "Terlalu banyak percobaan gagal.<br>Tunggu beberapa saat lagi."; break;
+            case 'auth/invalid-credential':
+                msg = "Kombinasi Email atau Password salah."; break;
+            case 'auth/operation-not-allowed':
+                msg = "Metode login ini belum diaktifkan di server."; break;
+            default:
+                msg = "Sistem Error: " + errorObj.code; break;
+        }
+    } else if (errorObj && errorObj.message) {
+        msg = errorObj.message;
     }
+
+    // Panggil Popup Modern (Merah/Danger) dengan tombol Tutup
+    uiConfirmAction(title, msg, () => {}, true, "Tutup");
 }
 
 /* =========================================
@@ -90,26 +106,28 @@ function getFriendlyError(error) {
 window.sysAuthGoogle = async function() {
     const provider = new GoogleAuthProvider();
     try { await signInWithPopup(auth, provider); } 
-    catch (error) { document.getElementById('auth-msg').innerText = getFriendlyError(error); }
+    catch (error) { uiShowError("Gagal Masuk Google", error); }
 }
 
 window.sysAuthLogin = async function() {
     const e = document.getElementById('auth-email').value;
     const p = document.getElementById('auth-pass').value;
-    if(!e || !p) return document.getElementById('auth-msg').innerText = "Mohon isi email & kata sandi.";
+    if(!e || !p) return uiShowError("Data Belum Lengkap", "Mohon isi Email dan Kata Sandi.");
+    
     try { await signInWithEmailAndPassword(auth, e, p); } 
-    catch (error) { document.getElementById('auth-msg').innerText = getFriendlyError(error); }
+    catch (error) { uiShowError("Gagal Masuk", error); }
 }
 
 window.sysAuthRegister = async function() {
     const e = document.getElementById('auth-email').value;
     const p = document.getElementById('auth-pass').value;
-    if(!e || !p) return document.getElementById('auth-msg').innerText = "Mohon isi email & kata sandi.";
+    if(!e || !p) return uiShowError("Data Belum Lengkap", "Mohon isi Email dan Kata Sandi.");
+    
     try {
         await createUserWithEmailAndPassword(auth, e, p);
         uiNotify("Akun berhasil dibuat! Selamat datang.");
     } catch (error) {
-        document.getElementById('auth-msg').innerText = getFriendlyError(error);
+        uiShowError("Gagal Daftar", error);
     }
 }
 
@@ -151,7 +169,7 @@ onAuthStateChanged(auth, async (user) => {
     } else {
         currentUser = null; storage = []; moveHis = [];
         loginOverlay.classList.remove('hidden'); 
-        document.getElementById('auth-msg').innerText = ""; // Bersihkan pesan error lama
+        document.getElementById('auth-msg').innerText = ""; // Bersihkan pesan
     }
 });
 
@@ -174,7 +192,9 @@ async function loadDataFromCloud() {
         }
         navRenderGrid(); uiNotify("Data Cloud Siap!");
     } catch (e) {
-        console.error(e); uiNotify("Gagal memuat: " + e.message, "danger");
+        console.error(e); 
+        // Error load data cukup notif kecil, jangan popup besar biar gak ganggu
+        uiNotify("Gagal memuat data server.", "danger");
     }
 }
 
@@ -354,7 +374,7 @@ window.sysToggleSelectAll = function(isChecked) {
 }
 
 window.uiShowChangelog = function() {
-    const logs = ["<b>v121.21 (Pro)</b>: Pesan Error Bahasa Indonesia yang lebih ramah.", "<b>v121.20 (UI)</b>: Update Tampilan Profil User."];
+    const logs = ["<b>v121.22 (Popup Error)</b>: Pesan error kini tampil di popup modern.", "<b>v121.20 (UI)</b>: Update Tampilan Profil User."];
     uiPopupOpen('changelog', logs);
 }
 
