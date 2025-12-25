@@ -176,9 +176,22 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
 .modal-inner { background: white; width: 95%; max-width: 500px; border-radius: 24px; padding: 20px; max-height: 85vh; overflow-y: auto; display:flex; flex-direction:column; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
 #preview-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-top: 120px; z-index: 20000; }
 
-.popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: flex-start; padding-top: 15vh; z-index: 30000; opacity: 1; transition: opacity 0.3s; }
+/* FIX Z-INDEX UTAMA: Popup harus di atas Login (50000) */
+.popup-overlay { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: flex-start; 
+    padding-top: 15vh; 
+    z-index: 55000; /* SEBELUMNYA 30000 - SEKARANG DINAIKKAN */
+    opacity: 1; transition: opacity 0.3s; 
+}
 .popup-overlay.hidden { opacity: 0; pointer-events: none; }
-#comp-notify { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); pointer-events: none; transition: 0.3s; opacity: 0; z-index: 40000; }
+
+/* FIX Z-INDEX NOTIF: Harus paling atas dari semuanya */
+#comp-notify { 
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%); 
+    pointer-events: none; transition: 0.3s; opacity: 0; 
+    z-index: 60000; /* SEBELUMNYA 40000 */
+}
 .notify-box { background: white; padding: 12px 25px; border-radius: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 2px solid #eee; font-weight: bold; }
 #comp-notify.show { top: 40px; opacity: 1; }
 
