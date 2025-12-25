@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nota Folder v121.16 - Fix Update</title>
+    <title>Nota Folder v121.28 - Reset Popup</title>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -11,6 +11,26 @@
 
 <div id="comp-notify">
     <div id="notify-box" class="notify-box"><span id="notify-msg">Pesan</span></div>
+</div>
+
+<div id="popup-forgot" class="popup-overlay hidden">
+    <div class="popup-box">
+        <div style="font-size: 40px; margin-bottom: 10px;">🔐</div>
+        <h3>Reset Kata Sandi</h3>
+        <p style="color:#64748b; font-size:12px; margin-bottom:15px; line-height:1.5;">
+            Masukkan alamat email akun Anda.<br>Kami akan mengirimkan link untuk membuat kata sandi baru.
+        </p>
+        
+        <input type="email" id="inp-forgot-email" placeholder="Contoh: nama@email.com" 
+               style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:10px; margin-bottom:20px; outline:none;">
+        
+        <div style="display:flex; gap:10px;">
+            <button onclick="document.getElementById('popup-forgot').classList.add('hidden')" 
+                    style="background:#f1f5f9; color:#64748b; flex:1; font-weight:bold;">Batal</button>
+            <button onclick="sysSubmitForgotPass()" 
+                    style="background:var(--nota); color:white; flex:1; font-weight:bold;">Kirim Link</button>
+        </div>
+    </div>
 </div>
 
 <div id="comp-popup" class="popup-overlay hidden">
@@ -92,7 +112,10 @@
         </div>
         
         <div style="text-align:right; margin-top:5px; margin-bottom:15px;">
-            <span onclick="sysForgotPass()" style="font-size:11px; color:var(--nota); cursor:pointer; font-weight:600;">Lupa Kata Sandi?</span>
+            <button onclick="document.getElementById('popup-forgot').classList.remove('hidden')" 
+                    style="background:transparent; border:none; font-size:11px; color:var(--nota); cursor:pointer; font-weight:600; padding:0;">
+                Lupa Kata Sandi?
+            </button>
         </div>
         
         <div style="display:flex; gap:10px; margin-top:15px;">
@@ -105,7 +128,7 @@
 
 <div class="container">
     <div class="header-row">
-        <div class="version-tag" onclick="uiShowChangelog()">Nota Folder v121.16 (Fix Update)</div>
+        <div class="version-tag" onclick="uiShowChangelog()">Nota Folder v121.28</div>
     </div>
     
     <div class="view-mode-bar">
