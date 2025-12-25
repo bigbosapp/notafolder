@@ -276,15 +276,6 @@ button:active, .view-btn:active, .nav-arrow:active, .card:active, .list-item:act
     text-align: center; width: 90%; max-width: 320px; 
 }
 
-.btn-google { 
-    background: white; color: #1e293b; border: 1px solid #cbd5e1; 
-    width: 100%; padding: 12px; border-radius: 10px; 
-    font-weight: bold; font-size: 13px; display: flex; 
-    align-items: center; justify-content: center; cursor: pointer; 
-    transition: 0.2s; 
-}
-.btn-google:hover { background: #f8fafc; border-color: #94a3b8; }
-
 .login-inp { 
     width: 100%; padding: 12px; margin-bottom: 10px; 
     border: 1px solid #cbd5e1; border-radius: 10px; 
