@@ -1,9 +1,9 @@
 /* =========================================
-   NOTA FOLDER v121.18 - FIX GHOST FOLDER
-   Integrasi Cloud: Authentication & Firestore
+   NOTA FOLDER v121.20 - USER PROFILE UPDATE
+   Integrasi Cloud + Tampilan User + Custom Logout
    ========================================= */
 
-// 1. IMPORT FIREBASE (LANGSUNG DARI CDN)
+// 1. IMPORT FIREBASE
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { 
     getAuth, 
@@ -32,12 +32,16 @@ const firebaseConfig = {
     measurementId: "G-ZTL4C1DMJK"
 };
 
-// 3. INISIALISASI FIREBASE
+// 3. INISIALISASI
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// 4. VARIABEL GLOBAL (STATE)
+// 4. CONSTANT DATA LAMA
+const DB_KEY_OLD = 'notafolder_db_v119_63';
+const HIS_KEY_OLD = 'notafolder_his_v119_63';
+
+// 5. STATE GLOBAL
 let currentUser = null; 
 let storage = [];
 let moveHis = [];
@@ -49,27 +53,21 @@ let sortOrder = localStorage.getItem('notafolder_sort_order') || 'created';
 let resetTimer = null;
 
 /* =========================================
-   BAGIAN AUTHENTICATION (LOGIN/LOGOUT)
+   BAGIAN AUTHENTICATION
    ========================================= */
 
 window.sysAuthGoogle = async function() {
     const provider = new GoogleAuthProvider();
-    try {
-        await signInWithPopup(auth, provider);
-    } catch (error) {
-        document.getElementById('auth-msg').innerText = "Gagal: " + error.message;
-    }
+    try { await signInWithPopup(auth, provider); } 
+    catch (error) { document.getElementById('auth-msg').innerText = "Gagal: " + error.message; }
 }
 
 window.sysAuthLogin = async function() {
     const e = document.getElementById('auth-email').value;
     const p = document.getElementById('auth-pass').value;
     if(!e || !p) return document.getElementById('auth-msg').innerText = "Isi email & password!";
-    try {
-        await signInWithEmailAndPassword(auth, e, p);
-    } catch (error) {
-        document.getElementById('auth-msg').innerText = "Error: " + error.message;
-    }
+    try { await signInWithEmailAndPassword(auth, e, p); } 
+    catch (error) { document.getElementById('auth-msg').innerText = "Error: " + error.message; }
 }
 
 window.sysAuthRegister = async function() {
@@ -84,25 +82,44 @@ window.sysAuthRegister = async function() {
     }
 }
 
-window.sysAppLogout = function() {
-    uiConfirmAction("Keluar Akun?", "Data Anda aman di server.", () => {
-        signOut(auth).then(() => { location.reload(); });
-    }, true);
-}
-
+// UPDATE: Listener Auth dengan Tampilan Profil
 onAuthStateChanged(auth, async (user) => {
     const loginOverlay = document.getElementById('view-login');
     if (user) {
         currentUser = user;
         loginOverlay.classList.add('hidden'); 
         uiNotify(`Halo, ${user.displayName || user.email}!`);
+        
         await loadDataFromCloud();
+        setTimeout(sysCheckLocalData, 1000); 
+
+        // --- UPDATE TAMPILAN TOMBOL PROFIL ---
         const btnReset = document.querySelector('.view-mode-bar .view-btn[style*="var(--danger)"]');
         if(btnReset) {
-            btnReset.innerHTML = "⏏"; 
-            btnReset.onclick = window.sysAppLogout;
-            btnReset.style.color = "var(--danger)";
+            // Potong email jika terlalu panjang agar muat di layar HP
+            let displayName = user.email.split('@')[0];
+            if(displayName.length > 10) displayName = displayName.substring(0, 10) + '...';
+
+            btnReset.innerHTML = `<span style="font-size:11px;">👤 ${displayName}</span>`; 
+            btnReset.style.width = "auto"; 
+            btnReset.style.minWidth = "80px";
+            btnReset.style.color = "var(--text)"; // Warna teks normal (hitam)
+            btnReset.style.borderColor = "#cbd5e1";
+            
+            // Override fungsi klik menjadi konfirmasi Logout
+            btnReset.onclick = function() {
+                uiConfirmAction(
+                    "Logout / Keluar?", 
+                    `Anda login sebagai:<br><b>${user.email}</b><br><br>Yakin ingin keluar?`, 
+                    () => {
+                        signOut(auth).then(() => { location.reload(); });
+                    }, 
+                    true, // Mode danger (Merah)
+                    "Keluar" // Custom Teks Tombol
+                );
+            };
         }
+        // -------------------------------------
     } else {
         currentUser = null; storage = []; moveHis = [];
         loginOverlay.classList.remove('hidden'); 
@@ -110,12 +127,12 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 /* =========================================
-   BAGIAN DATABASE (FIRESTORE)
+   BAGIAN DATABASE & MIGRASI
    ========================================= */
 
 async function loadDataFromCloud() {
     if(!currentUser) return;
-    uiNotify("Memuat data...", "success");
+    uiNotify("Sinkronisasi...", "success");
     try {
         const docRef = doc(db, "users", currentUser.uid);
         const docSnap = await getDoc(docRef);
@@ -126,9 +143,9 @@ async function loadDataFromCloud() {
         } else {
             storage = []; moveHis = [];
         }
-        navRenderGrid(); uiNotify("Data siap!");
+        navRenderGrid(); uiNotify("Data Cloud Siap!");
     } catch (e) {
-        console.error(e); uiNotify("Gagal memuat data: " + e.message, "danger");
+        console.error(e); uiNotify("Gagal memuat Cloud: " + e.message, "danger");
     }
 }
 
@@ -141,32 +158,55 @@ window.dbSave = async function() {
             history: JSON.stringify(moveHis),
             lastUpdate: new Date().toISOString()
         }, { merge: true });
+        console.log("Cloud saved.");
     } catch (e) {
-        console.error("Gagal simpan ke cloud:", e);
-        uiNotify("Gagal simpan ke server! Cek internet.", "danger");
+        console.error("Cloud Save Error:", e);
+        uiNotify("Gagal simpan ke Cloud!", "danger");
+    }
+}
+
+window.sysCheckLocalData = function() {
+    const localRaw = localStorage.getItem(DB_KEY_OLD);
+    if(localRaw && localRaw.length > 5) {
+        const localData = JSON.parse(localRaw);
+        if(localData.length > 0) {
+            uiConfirmAction(
+                "Data Lama Ditemukan!", 
+                `Ada ${localData.length} file tersimpan di HP ini (Offline).<br>Ingin meng-uploadnya ke Akun Cloud Anda?`, 
+                () => { sysUploadLocalData(localData); },
+                false,
+                "Upload"
+            );
+        }
+    }
+}
+
+window.sysUploadLocalData = function(localData) {
+    if(!localData) localData = JSON.parse(localStorage.getItem(DB_KEY_OLD) || "[]");
+    let added = 0;
+    const currentIds = new Set(storage.map(i => i.id));
+    localData.forEach(item => {
+        if(!currentIds.has(item.id)) {
+            storage.push(item);
+            added++;
+        }
+    });
+    if(added > 0) {
+        dbSave(); navRenderGrid(); uiNotify(`Berhasil memulihkan ${added} file lama!`);
+    } else {
+        uiNotify("Data lokal sudah ada di Cloud.");
     }
 }
 
 /* =========================================
-   FUNGSI-FUNGSI LOGIKA APP (CRUD)
+   FUNGSI LOGIKA (FIX GHOST FOLDER INCLUDE)
    ========================================= */
 
-// --- FIX UTAMA: Validasi Silsilah Folder ---
-// Mengecek apakah folder ini valid (tidak yatim piatu / ghost)
 window.isValidPath = function(item) {
-    // 1. Jika item ini sendiri ada di sampah, berarti tidak valid
     if(item.inTrash) return false;
-    
-    // 2. Jika sudah sampai di akar (Beranda), berarti valid
     if(!item.parentId || item.parentId === 'HOME') return true;
-    
-    // 3. Cari bapaknya
     const parent = storage.find(p => p.id === item.parentId);
-    
-    // 4. Jika bapaknya tidak ditemukan (Ghost Parent), berarti jalur putus -> tidak valid
     if(!parent) return false;
-    
-    // 5. Cek lagi ke atas (Rekursif)
     return isValidPath(parent);
 }
 
@@ -186,7 +226,6 @@ window.sysSanitizeDB = function() {
         if (item.parentId && item.parentId !== 'HOME') {
             const parentExists = storage.some(p => p.id === item.parentId && !p.inTrash);
             if (!parentExists) {
-                // Jika bapaknya hilang, pindah ke HOME agar bisa diselamatkan/dihapus manual user
                 item.parentId = null; 
                 changed = true;
             }
@@ -286,7 +325,7 @@ window.sysToggleSelectAll = function(isChecked) {
 }
 
 window.uiShowChangelog = function() {
-    const logs = ["<b>v121.18 (Fix)</b>: Perbaikan Ghost Folder saat memindahkan file.", "<b>v121.17 (Cloud)</b>: Integrasi Firebase."];
+    const logs = ["<b>v121.20 (UI)</b>: Update Tampilan Profil User.", "<b>v121.19 (Sync)</b>: Fitur Upload Data Offline."];
     uiPopupOpen('changelog', logs);
 }
 
@@ -425,7 +464,7 @@ window.navBack = function(isHardware = false, force = false) {
     if(!force && document.body.classList.contains('mode-editor')) {
         const statusText = document.getElementById('txt-save-status').innerText;
         if(!statusText.includes("Siap Cetak")) {
-            uiConfirmAction("Data Belum Disimpan!", "Perubahan akan <b>HILANG</b> jika keluar.<br>Keluar?", () => { navBack(isHardware, true); }, true); return;
+            uiConfirmAction("Data Belum Disimpan!", "Perubahan akan <b>HILANG</b> jika keluar.<br>Keluar?", () => { navBack(isHardware, true); }, true, "Keluar"); return;
         }
     }
     if(!isHardware) {
@@ -447,7 +486,7 @@ window.onpopstate = function(event) {
             uiConfirmAction("Belum Disimpan!", "Perubahan Anda akan hilang jika kembali.<br>Yakin ingin keluar?", () => {
                 document.getElementById('txt-save-status').innerText = "✅ Siap Cetak!";
                 if(curParent) navGo(curParent); else navGo(null);
-            }, true);
+            }, true, "Keluar");
             return; 
         }
     }
@@ -495,10 +534,14 @@ window.uiPopupReset = function() {
     bc.onclick = () => { uiPopupClose(); }; document.getElementById('popup-input').value = ""; document.getElementById('popup-desc').innerHTML = ""; 
 }
 
-window.uiConfirmAction = function(t, d, o, s) { 
+// UPDATE: Tambahan Parameter 'customBtnText'
+window.uiConfirmAction = function(t, d, o, s, customBtnText = null) { 
     uiPopupReset(); const c = document.getElementById('comp-popup'); document.getElementById('popup-icon').innerText = s ? '⚠️' : 'ℹ️'; document.getElementById('popup-title').innerText = t; document.getElementById('popup-desc').innerHTML = d; document.getElementById('popup-desc').classList.remove('hidden'); 
     const b = document.getElementById('btn-popup-confirm'); const bc = document.getElementById('btn-popup-cancel');
-    b.style.background = s ? "var(--danger)" : "var(--success)"; b.innerText = s ? "Hapus" : "Ya"; b.disabled = false; bc.style.background = "#f1f5f9"; bc.style.color = "#64748b"; bc.innerText = "Batal"; c.classList.remove('hidden'); b.onclick = () => { o(); uiPopupClose(); }; bc.onclick = () => { uiPopupClose(); }; 
+    b.style.background = s ? "var(--danger)" : "var(--success)"; 
+    // Logic teks tombol: Jika ada customBtnText pakai itu, jika tidak pakai default Hapus/Ya
+    b.innerText = customBtnText ? customBtnText : (s ? "Hapus" : "Ya"); 
+    b.disabled = false; bc.style.background = "#f1f5f9"; bc.style.color = "#64748b"; bc.innerText = "Batal"; c.classList.remove('hidden'); b.onclick = () => { o(); uiPopupClose(); }; bc.onclick = () => { uiPopupClose(); }; 
 }
 
 window.uiPopupOpen = function(type, extra = null) {
@@ -541,12 +584,11 @@ window.uiPopupOpen = function(type, extra = null) {
         if(selIds.length === 0) { uiPopupClose(); return uiNotify("Pilih item dulu!", "danger"); } 
         icon.innerText = '🚚'; title.innerText = "Pindahkan Item"; desc.innerText = "Pilih Folder Tujuan:"; desc.classList.remove('hidden'); wrap.classList.remove('hidden'); input.classList.add('hidden'); sel.classList.remove('hidden'); 
         
-        // --- FIX FILTER: GUNAKAN isValidPath ---
         const validDestinations = storage.filter(f => 
             f.type === 'folder' && 
             !selIds.includes(f.id) && 
             !selIds.some(selId => isDescendant(selId, f.id)) &&
-            isValidPath(f) // <<-- TAMBAHAN: Hapus folder hantu
+            isValidPath(f) 
         ); 
         
         sel.innerHTML = '<option value="">-- Pilih Folder --</option><option value="HOME">🏠 BERANDA</option>'; 
