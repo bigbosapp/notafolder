@@ -970,4 +970,4 @@ sysSanitizeDB(); sysAutoCleanup();
 history.replaceState({view: 'folder', id: null}, null, "");
 if (savedNote) { if(savedParent) curParent = savedParent; history.pushState({view: 'folder', id: curParent}, null, ""); editOpen(savedNote); } 
 else if (savedParent) { navGo(savedParent); } else { navRenderGrid(); }
-if(localStorage.getItem('notafolder_view_mode')) { viewMode = localStorage.getItem('notafolder_view_mode'); sysChangeView(viewMode);
+if(localStorage.getItem('notafolder_view_mode')) { viewMode = localStorage.getItem('notafolder_view_mode'); sysChangeView(viewMode); }
