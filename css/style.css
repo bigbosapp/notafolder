@@ -181,7 +181,7 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
     background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: flex-start; 
     padding-top: 15vh; 
-    z-index: 55000; /* SEBELUMNYA 30000 - SEKARANG DINAIKKAN */
+    z-index: 55000; 
     opacity: 1; transition: opacity 0.3s; 
 }
 .popup-overlay.hidden { opacity: 0; pointer-events: none; }
@@ -190,7 +190,7 @@ textarea.compact-area { width: 100%; margin-top: 5px; padding: 10px; border-radi
 #comp-notify { 
     position: fixed; top: 20px; left: 50%; transform: translateX(-50%); 
     pointer-events: none; transition: 0.3s; opacity: 0; 
-    z-index: 60000; /* SEBELUMNYA 40000 */
+    z-index: 60000; 
 }
 .notify-box { background: white; padding: 12px 25px; border-radius: 50px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 2px solid #eee; font-weight: bold; }
 #comp-notify.show { top: 40px; opacity: 1; }
